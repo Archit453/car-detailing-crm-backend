@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Coexistence Setup | Signature Detailing CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen antialiased flex flex-col justify-center items-center p-4">
+
+  <div class="max-w-xl w-full glass-card rounded-2xl border border-emerald-700/60 p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in relative bg-zinc-950/95">
+    
+    <div class="flex items-center space-x-4">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+        <i data-lucide="smartphone" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/80 uppercase tracking-wide">Step 3 of 3</span>
+          <span class="text-xs text-zinc-400">Final Step</span>
+        </div>
+        <h1 class="text-xl font-bold text-white font-display mt-0.5">Connect WhatsApp Coexistence</h1>
+      </div>
+    </div>
+
+    <div class="space-y-3 bg-zinc-900/80 p-4 rounded-xl border border-zinc-800 text-xs text-zinc-300 leading-relaxed">
+      <p class="font-semibold text-white text-sm">How to complete your connection:</p>
+      
+      <div class="flex items-start space-x-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">1</span>
+        <span>Click <strong>"Launch Meta Verification Popup"</strong> below.</span>
+      </div>
+
+      <div class="flex items-start space-x-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">2</span>
+        <span>Select your Meta Business Portfolio (<strong>Signature Detailing</strong>) and select <strong>"Connect existing WhatsApp Business App account"</strong>.</span>
+      </div>
+
+      <div class="flex items-start space-x-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">3</span>
+        <span>Enter your phone number: <strong class="text-emerald-400 font-mono">+91 98612 01770</strong>.</span>
+      </div>
+
+      <div class="flex items-start space-x-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">4</span>
+        <span>WhatsApp will send a 6-digit confirmation code <strong>inside the WhatsApp Business chat on your phone</strong>.</span>
+      </div>
+
+      <div class="flex items-start space-x-2.5">
+        <span class="w-5 h-5 rounded-full bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">5</span>
+        <span>Enter the 6 digits in the popup and click <strong>Finish</strong>.</span>
+      </div>
+    </div>
+
+    <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-1 text-xs font-mono text-zinc-400">
+      <div class="flex justify-between">
+        <span class="text-zinc-500">Meta App ID:</span>
+        <strong class="text-zinc-200">1086490643745739</strong>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-zinc-500">Configuration ID:</span>
+        <strong class="text-emerald-400">2499074500567851</strong>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-zinc-500">Business Phone:</span>
+        <strong class="text-zinc-200">+91 98612 01770</strong>
+      </div>
+    </div>
+
+    <div id="success-banner" class="hidden p-4 rounded-xl bg-emerald-950/80 border border-emerald-600/80 space-y-2 text-center">
+      <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-sm font-bold text-white">WhatsApp Coexistence Connected!</h3>
+      <p class="text-xs text-emerald-300">Your phone WhatsApp Business app and CRM bot are now running simultaneously on the same number.</p>
+      <div class="pt-2">
+        <a href="/dashboard" class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition">
+          <span>Open CRM Dashboard</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+    </div>
+
+    <div id="action-container" class="space-y-3">
+      <button id="btn-launch-signup" type="button" class="w-full flex items-center justify-center space-x-2.5 py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-950/50 transition active:scale-95 cursor-pointer">
+        <i data-lucide="external-link" class="w-4 h-4"></i>
+        <span>Launch Meta Verification Popup</span>
+      </button>
+      <div class="flex items-center justify-between text-xs text-zinc-500 pt-1">
+        <a href="/dashboard" class="hover:text-zinc-300 transition flex items-center space-x-1">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Back to Dashboard</span>
+        </a>
+        <span>Powered by Meta JavaScript SDK</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const META_APP_ID = "1086490643745739";
+    const CONFIG_ID = "2499074500567851";
+
+    window.fbAsyncInit = function() {
+      if (typeof FB !== "undefined") {
+        FB.init({ appId: META_APP_ID, autoLogAppEvents: true, xfbml: true, version: "v21.0" });
+        console.log("[Meta SDK] Initialized");
+      }
+    };
+
+    document.getElementById("btn-launch-signup").addEventListener("click", () => {
+      if (typeof FB === "undefined") {
+        alert("Meta Facebook SDK is loading. If you have an ad blocker, please temporarily disable it or refresh.");
+        return;
+      }
+      FB.login(function(response) {
+        console.log("[Meta Response]", response);
+        if (response.authResponse && response.authResponse.code) {
+          handleSuccess({ code: response.authResponse.code });
+        }
+      }, {
+        config_id: CONFIG_ID,
+        response_type: "code",
+        override_default_response_type: true,
+        extras: { setup: {}, feature: "whatsapp_embedded_signup", version: 2, sessionInfoVersion: 3 }
+      });
+    });
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== "https://www.facebook.com" && event.origin !== "https://web.facebook.com") return;
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (data?.type === "WA_EMBEDDED_SIGNUP") {
+          console.log("[WA_EMBEDDED_SIGNUP]", data);
+          if (data.event === "FINISH" || data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING") {
+            handleSuccess(data.data || {});
+          }
+        }
+      } catch (e) {}
+    });
+
+    async function handleSuccess(details) {
+      document.getElementById("action-container").classList.add("hidden");
+      document.getElementById("success-banner").classList.remove("hidden");
+      try {
+        await fetch("/api/inbox/whatsapp/embedded-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(details)
+        });
+      } catch (err) {
+        console.warn("[Sync Error]", err);
+      }
+    }
+  </script>
+</body>
+</html>

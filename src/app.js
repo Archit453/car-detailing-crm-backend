@@ -69,6 +69,11 @@ app.get('/dashboard', requireAuth, (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+// WhatsApp Coexistence Setup Page (Step 3)
+app.get('/coexistence', (req, res) => {
+  res.sendFile(path.join(publicPath, 'coexistence.html'));
+});
+
 // Root Route - Base API status & index (with browser redirect to /dashboard)
 app.get('/', (req, res) => {
   if (req.accepts('html') && !req.accepts('json')) {
