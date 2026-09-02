@@ -112,21 +112,37 @@
     };
 
     document.getElementById("btn-launch-signup").addEventListener("click", () => {
+      const directOAuthUrl = "https://www.facebook.com/v21.0/dialog/oauth?client_id=" + META_APP_ID + "&config_id=" + CONFIG_ID + "&response_type=code&redirect_uri=" + encodeURIComponent("https://car-detailing-crm-backend.vercel.app/coexistence");
+
       if (typeof FB === "undefined") {
-        alert("Meta Facebook SDK is loading. If you have an ad blocker, please temporarily disable it or refresh.");
+        // If JS SDK is blocked by browser/adblocker, redirect directly to official Meta OAuth URL!
+        window.location.href = directOAuthUrl;
         return;
       }
+
       FB.login(function(response) {
         console.log("[Meta Response]", response);
         if (response.authResponse && response.authResponse.code) {
           handleSuccess({ code: response.authResponse.code });
+        } else {
+          // If popup failed or blocked, redirect directly
+          window.location.href = directOAuthUrl;
         }
       }, {
         config_id: CONFIG_ID,
-        response_type: "code",
+        response_type: 'code',
         override_default_response_type: true,
         extras: { setup: {}, feature: "whatsapp_embedded_signup", version: 2, sessionInfoVersion: 3 }
       });
+    });
+
+    // Check if returning from direct OAuth redirect with ?code=
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (code) {
+        handleSuccess({ code });
+      }
     });
 
     window.addEventListener("message", (event) => {
@@ -158,3 +174,4 @@
   </script>
 </body>
 </html>
+
