@@ -302,7 +302,45 @@ async function runTests() {
     assert(resumeBotRes.status === 200, 'POST /api/inbox/whatsapp/bot-toggle resume returns 200 OK');
     assert(resumeBotJson.data?.botPaused === false, 'Bot status confirmed resumed (automated mode)');
 
-    // Test 27: POST /api/auth/logout clears session
+    // Test 27: WhatsApp Coexistence (Option 2) smb_message_echoes from phone app
+    const echoRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'test_waba_id',
+            changes: [
+              {
+                field: 'smb_message_echoes',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: {
+                    display_phone_number: '1344182455438369',
+                    phone_number_id: '1344182455438369',
+                  },
+                  messages: [
+                    {
+                      from: '1344182455438369',
+                      to: '15559876543',
+                      id: 'wamid.test_echo_123',
+                      text: { body: 'Hello! Replying directly from my phone app.' },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const echoJson = await echoRes.json();
+    assert(echoRes.status === 200, 'Webhook returns 200 for smb_message_echoes');
+    assert(echoJson.status === 'coexistence_echo_handled', 'Webhook handles coexistence phone echo');
+    assert(echoJson.human_takeover === true, 'Coexistence phone reply automatically activates human takeover');
+
+    // Test 28: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

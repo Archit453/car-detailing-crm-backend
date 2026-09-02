@@ -110,15 +110,88 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
   let phoneNumberId = '';
   let profileName = '';
 
-  if (req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]) {
-    // Meta Cloud API Webhook Format
+  const entry = req.body.entry?.[0];
+  const change = entry?.changes?.[0];
+  const field = change?.field;
+  const value = change?.value;
+
+  // -------------------------------------------------------------
+  // Option 2 (Coexistence): Detect outbound reply from WhatsApp Business Mobile App
+  // When staff replies from their phone, Meta sends 'smb_message_echoes'
+  // -------------------------------------------------------------
+  const isSmbEcho = field === 'smb_message_echoes' || Boolean(value?.smb_message_echoes);
+  if (isSmbEcho) {
+    const echoMsg = value?.smb_message_echoes?.[0] || value?.messages?.[0];
+    const customerPhone = (echoMsg?.to || echoMsg?.recipient_id || '').replace(/[^0-9]/g, '');
+    const outboundBody = echoMsg?.text?.body?.trim() || '';
+
+    if (customerPhone && outboundBody) {
+      console.log(`[WhatsApp Coexistence Echo] Staff replied via Phone App to ${customerPhone}: "${outboundBody}"`);
+      
+      // 1. Mirror staff reply in CRM Live Inbox
+      await logWhatsAppMessage(
+        customerPhone,
+        'Customer',
+        'outbound',
+        'agent',
+        outboundBody
+      );
+
+      // 2. Automatically pause the bot (Human Mode) because staff is speaking directly with client
+      await supabase
+        .from('whatsapp_sessions')
+        .upsert({
+          phone: customerPhone,
+          step: 'human_takeover',
+          updated_at: new Date().toISOString(),
+        });
+
+      return res.status(200).json({ status: 'coexistence_echo_handled', human_takeover: true });
+    }
+  }
+
+  // Check if outbound echo arrives inside standard messages array where sender == business phone
+  if (value?.messages?.[0] && value?.metadata?.display_phone_number) {
+    const msg = value.messages[0];
+    const bizPhone = value.metadata.display_phone_number.replace(/[^0-9]/g, '');
+    const senderPhone = (msg.from || '').replace(/[^0-9]/g, '');
+    
+    if (senderPhone && bizPhone && senderPhone === bizPhone && msg.to) {
+      const customerPhone = msg.to.replace(/[^0-9]/g, '');
+      const outboundBody = msg.text?.body?.trim() || '';
+      if (outboundBody) {
+        console.log(`[WhatsApp Coexistence Echo] Staff replied via Phone App to ${customerPhone}: "${outboundBody}"`);
+        await logWhatsAppMessage(customerPhone, 'Customer', 'outbound', 'agent', outboundBody);
+        await supabase
+          .from('whatsapp_sessions')
+          .upsert({
+            phone: customerPhone,
+            step: 'human_takeover',
+            updated_at: new Date().toISOString(),
+          });
+        return res.status(200).json({ status: 'coexistence_echo_handled', human_takeover: true });
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Inbound Customer Inquiries (Meta Cloud API, ChatSyncs, Twilio)
+  // -------------------------------------------------------------
+  if (value?.messages?.[0]) {
+    // Meta Cloud API & Coexistence Webhook Format
     isMeta = true;
-    const value = req.body.entry[0].changes[0].value;
     const message = value.messages[0];
     fromNumber = message.from;
     incomingText = message.text?.body?.trim() || '';
     phoneNumberId = value.metadata?.phone_number_id || config.whatsapp.phoneNumberId;
     profileName = value.contacts?.[0]?.profile?.name || '';
+  } else if (req.body.data && (req.body.data.from || req.body.data.phone)) {
+    // ChatSyncs / Third-party webhook forwarder format
+    isMeta = true;
+    fromNumber = (req.body.data.from || req.body.data.phone).replace(/[^0-9]/g, '');
+    incomingText = (req.body.data.text || req.body.data.body || req.body.data.message || '').trim();
+    profileName = req.body.data.name || req.body.data.sender_name || '';
+    phoneNumberId = config.whatsapp.phoneNumberId;
   } else if (req.body.From && req.body.Body) {
     // Twilio Webhook Format
     fromNumber = req.body.From.replace('whatsapp:', '').trim();
