@@ -25,6 +25,9 @@ A production-ready Express.js REST API backend for a Car Detailing CRM, integrat
 - [Phase 3: Framer Frontend & WhatsApp Lead Automation Integration](#-phase-3-framer-frontend--whatsapp-lead-automation-integration)
 - [Phase 4: Instagram Direct Message Lead Bot Integration](#-phase-4-instagram-direct-message-lead-bot-integration)
 - [🖥️ CRM Frontend Dashboard UI](#️-crm-frontend-dashboard-ui)
+- [🔐 Dashboard Authentication & Security](#-dashboard-authentication--security)
+- [⚡ Supabase Database Keep-Alive (Vercel Cron)](#-supabase-database-keep-alive-vercel-cron)
+- [🚀 Git Repository Setup & Push Guide](#-git-repository-setup--push-guide)
 
 ---
 
@@ -176,9 +179,18 @@ Server will run at `http://localhost:5000`.
 |---|---|---|---|
 | `PORT` | No | `5000` | Port for the local Express server |
 | `NODE_ENV` | No | `development` | Environment mode (`development`, `production`, `test`) |
-| `CORS_ORIGIN` | No | `*` | Allowed origins (e.g. `*` or `https://mycrm.com,http://localhost:3000`) |
+| `CORS_ORIGIN` | No | `*` | Allowed origins (e.g. `https://weekly-steps-579379.framer.app`) |
 | `SUPABASE_URL` | **Yes** | — | Project URL from Supabase Project Settings -> API |
 | `SUPABASE_KEY` | **Yes** | — | Anon public key or Service Role key from Supabase Settings -> API |
+| `ADMIN_USERNAME` | No | `admin` | Administrator username for `/login` and `/dashboard` |
+| `ADMIN_PASSWORD` | No | `SignatureCRM@2026!` | Administrator password for dashboard access |
+| `SESSION_SECRET` | No | *(Auto fallback)* | Cryptographic HMAC secret for signing 30-day session cookies |
+| `CRON_SECRET` | No | — | Optional Bearer secret to verify Vercel Cron keep-alive requests |
+| `WHATSAPP_TOKEN` | No | — | Meta WhatsApp Cloud API access token |
+| `WHATSAPP_PHONE_NUMBER_ID` | No | — | Meta WhatsApp Business Phone Number ID |
+| `WHATSAPP_VERIFY_TOKEN` | No | `signature_crm_verify_token` | Webhook verification handshake token for WhatsApp |
+| `INSTAGRAM_PAGE_ACCESS_TOKEN` | No | — | Meta Instagram Graph API Page Access Token |
+| `INSTAGRAM_VERIFY_TOKEN` | No | `signature_crm_verify_token` | Webhook verification handshake token for Instagram |
 
 ---
 
