@@ -1008,7 +1008,7 @@ function renderConversationsList() {
     .map((conv) => {
       const isActive = state.inbox.activePhone === conv.phone;
       const activeClass = isActive
-        ? 'bg-zinc-800/90 border-l-4 border-l-green-500'
+        ? 'conversation-item-active bg-zinc-800/90 shadow-sm'
         : 'hover:bg-zinc-900/60 border-l-4 border-l-transparent';
       
       const initials = (conv.customer_name || 'C')
@@ -1020,27 +1020,31 @@ function renderConversationsList() {
 
       const senderTag =
         conv.last_sender === 'customer'
-          ? ''
+          ? '<span class="text-zinc-500 text-[10px] mr-1">↙</span>'
           : conv.last_sender === 'bot'
-          ? '<span class="text-sky-400 text-[10px] mr-1">🤖 Bot:</span>'
-          : '<span class="text-green-400 text-[10px] mr-1">You:</span>';
+          ? '<span class="text-indigo-400 text-[10px] font-semibold mr-1">🤖 Bot:</span>'
+          : '<span class="text-emerald-400 text-[10px] font-semibold mr-1">↗ You:</span>';
+
+      const avatarBg = isActive 
+        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm' 
+        : 'bg-zinc-900 text-zinc-300 border-zinc-700/80';
 
       return `
         <div 
           onclick="loadChatThread('${escapeHtml(conv.phone)}', '${escapeHtml(conv.customer_name)}')"
-          class="p-3.5 cursor-pointer transition flex items-start space-x-3 ${activeClass}"
+          class="conversation-item p-3.5 cursor-pointer transition flex items-start space-x-3 border-b border-zinc-900/80 ${activeClass}"
         >
-          <div class="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/80 text-zinc-200 font-bold flex items-center justify-center text-xs shrink-0">
+          <div class="w-10 h-10 rounded-xl ${avatarBg} border font-bold flex items-center justify-center text-xs shrink-0 transition shadow-inner">
             ${escapeHtml(initials)}
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between">
-              <h5 class="text-xs font-bold text-white truncate">${escapeHtml(conv.customer_name)}</h5>
-              <span class="text-[10px] text-zinc-500 shrink-0 ml-1">${formatTimeAgo(conv.last_message_at)}</span>
+              <h5 class="text-xs font-bold text-zinc-100 truncate">${escapeHtml(conv.customer_name)}</h5>
+              <span class="text-[10px] text-zinc-500 font-medium shrink-0 ml-1.5">${formatTimeAgo(conv.last_message_at)}</span>
             </div>
             <p class="text-[11px] text-zinc-400 font-mono mt-0.5">${escapeHtml(conv.phone)}</p>
-            <p class="text-xs text-zinc-400 truncate mt-1">
-              ${senderTag}${escapeHtml(conv.last_message || '')}
+            <p class="text-xs text-zinc-400 truncate mt-1 flex items-center">
+              ${senderTag}<span>${escapeHtml(conv.last_message || '')}</span>
             </p>
           </div>
         </div>
@@ -1263,38 +1267,38 @@ function renderMessageThread() {
 
       if (isCustomer) {
         return `
-          <div class="flex flex-col items-start max-w-[85%] sm:max-w-[75%] animate-fade-in">
-            <div class="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-zinc-800 text-zinc-100 text-xs sm:text-sm border border-zinc-700/60 shadow-sm leading-relaxed whitespace-pre-wrap">
+          <div class="flex flex-col items-start max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tl-xs bg-zinc-900/95 text-zinc-100 text-xs sm:text-sm border border-zinc-700/60 shadow-md leading-relaxed whitespace-pre-wrap select-text">
               ${escapeHtml(msg.message_text)}
             </div>
-            <span class="text-[10px] text-zinc-500 mt-1 ml-1.5">${escapeHtml(timeStr)}</span>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 ml-1.5">${escapeHtml(timeStr)}</span>
           </div>
         `;
       } else if (isBot) {
         return `
-          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[75%] animate-fade-in">
-            <div class="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-zinc-900 text-zinc-300 text-xs sm:text-sm border border-zinc-800 shadow-sm leading-relaxed whitespace-pre-wrap">
-              <div class="flex items-center space-x-1 text-[10px] text-sky-400 font-semibold mb-1">
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-indigo-950/40 text-zinc-200 text-xs sm:text-sm border border-indigo-500/30 shadow-md leading-relaxed whitespace-pre-wrap select-text">
+              <div class="flex items-center space-x-1.5 text-[10px] text-indigo-400 font-bold mb-1">
                 <i data-lucide="bot" class="w-3 h-3"></i>
-                <span>Automated Bot</span>
+                <span>Automated Assistant</span>
               </div>
               ${escapeHtml(msg.message_text)}
             </div>
-            <span class="text-[10px] text-zinc-500 mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
           </div>
         `;
       } else {
-        // Agent (Manual reply)
+        // Agent / Staff reply
         return `
-          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[75%] animate-fade-in">
-            <div class="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs sm:text-sm shadow-md shadow-green-600/20 leading-relaxed whitespace-pre-wrap">
-              <div class="flex items-center space-x-1 text-[10px] text-green-200 font-semibold mb-1">
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-sm shadow-lg shadow-emerald-950/40 leading-relaxed whitespace-pre-wrap select-text">
+              <div class="flex items-center space-x-1.5 text-[10px] text-emerald-200 font-bold mb-1">
                 <i data-lucide="user-check" class="w-3 h-3"></i>
-                <span>You (Agent)</span>
+                <span>You (Staff)</span>
               </div>
               ${escapeHtml(msg.message_text)}
             </div>
-            <span class="text-[10px] text-zinc-500 mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
           </div>
         `;
       }
