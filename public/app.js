@@ -450,11 +450,21 @@ function renderTable() {
         <tr class="hover:bg-zinc-900/60 transition group border-b border-zinc-800/40">
           <td class="py-3 px-4">
             <div class="flex items-center space-x-3">
-              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-700 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-sky-400">
+              <div 
+                onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                title="Click to open in CRM Chat" 
+                class="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-700 hover:from-emerald-950 hover:to-emerald-900 border border-zinc-700 hover:border-emerald-500/50 flex items-center justify-center text-xs font-semibold text-sky-400 hover:text-emerald-400 cursor-pointer transition shadow-sm"
+              >
                 ${initials}
               </div>
               <div>
-                <p class="font-medium text-white text-xs">${escapeHtml(lead.name)}</p>
+                <button 
+                  onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                  title="Click to open in CRM Chat"
+                  class="font-semibold text-white hover:text-emerald-400 text-xs transition text-left cursor-pointer"
+                >
+                  ${escapeHtml(lead.name)}
+                </button>
                 <p class="text-[11px] text-zinc-500">ID: ${lead.id.slice(0, 8)}</p>
               </div>
             </div>
@@ -496,35 +506,40 @@ function renderTable() {
 
           <td class="py-3 px-4 text-right">
             <div class="flex items-center justify-end space-x-1.5">
+              <!-- Showcased CRM Live Chat Button -->
               <button 
                 onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
-                title="Open in CRM WhatsApp Inbox"
-                class="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-green-400 border border-zinc-700/60 transition"
+                title="Open inside CRM Live Chat"
+                class="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold shadow-sm transition active:scale-95 mr-0.5"
               >
                 <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <span class="hidden xl:inline">CRM Chat</span>
               </button>
 
+              <!-- 1. Open WhatsApp Web/App -->
               <a 
                 href="${waUrl}" 
                 target="_blank" 
-                title="Chat on WhatsApp"
-                class="p-1.5 rounded-lg bg-green-950/50 hover:bg-green-900/80 text-green-400 border border-green-800/40 transition"
+                title="Open in WhatsApp Web / App"
+                class="p-1.5 rounded-lg bg-green-950/60 hover:bg-green-900 text-green-400 border border-green-800/50 transition active:scale-95"
               >
                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
               </a>
 
+              <!-- 2. Call Customer -->
               <a 
                 href="tel:${lead.phone}" 
                 title="Call Customer"
-                class="p-1.5 rounded-lg bg-sky-950/50 hover:bg-sky-900/80 text-sky-400 border border-sky-800/40 transition"
+                class="p-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-900 text-sky-400 border border-sky-800/50 transition active:scale-95"
               >
                 <i data-lucide="phone" class="w-3.5 h-3.5"></i>
               </a>
 
+              <!-- 3. Delete Lead -->
               <button 
                 onclick="promptDeleteLead('${lead.id}', '${escapeHtml(lead.name)}')" 
                 title="Delete Lead"
-                class="p-1.5 rounded-lg bg-zinc-900 hover:bg-red-950/60 text-zinc-500 hover:text-red-400 border border-zinc-800 hover:border-red-900/50 transition"
+                class="p-1.5 rounded-lg bg-zinc-900 hover:bg-red-950/60 text-zinc-500 hover:text-red-400 border border-zinc-800 hover:border-red-900/50 transition active:scale-95"
               >
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
@@ -578,39 +593,64 @@ function renderTable() {
           </div>
 
           <!-- Bottom Row: Status Dropdown & 1-Touch Buttons -->
-          <div class="grid grid-cols-4 gap-1.5 pt-1.5 border-t border-zinc-800/50">
-            <div class="col-span-2">
-              <select 
-                onchange="handleStatusChange('${lead.id}', this.value)"
-                class="w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 border focus:outline-none cursor-pointer ${getStatusBadgeClass(lead.status)}"
+          <div class="space-y-2 pt-1.5 border-t border-zinc-800/50">
+            <!-- Row 1: Status Dropdown & Showcased CRM Chat -->
+            <div class="grid grid-cols-5 gap-1.5">
+              <div class="col-span-3">
+                <select 
+                  onchange="handleStatusChange('${lead.id}', this.value)"
+                  class="w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 border focus:outline-none cursor-pointer ${getStatusBadgeClass(lead.status)}"
+                >
+                  <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New</option>
+                  <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                  <option value="scheduled" ${lead.status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
+                  <option value="in_progress" ${lead.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                  <option value="completed" ${lead.status === 'completed' ? 'selected' : ''}>Completed</option>
+                  <option value="cancelled" ${lead.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </div>
+
+              <!-- Showcased CRM Chat Button -->
+              <button 
+                onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                class="col-span-2 flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition active:scale-95 shadow-sm"
+                title="Open inside CRM Live Chat"
               >
-                <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New</option>
-                <option value="contacted" ${lead.status === 'contacted' ? 'selected' : ''}>Contacted</option>
-                <option value="scheduled" ${lead.status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
-                <option value="in_progress" ${lead.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                <option value="completed" ${lead.status === 'completed' ? 'selected' : ''}>Completed</option>
-                <option value="cancelled" ${lead.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
+                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <span>CRM Chat</span>
+              </button>
             </div>
 
-            <!-- WhatsApp 1-Touch Button -->
-            <a 
-              href="${waUrl}" 
-              target="_blank" 
-              class="flex items-center justify-center py-1.5 rounded-lg bg-green-950/70 hover:bg-green-900 text-green-400 border border-green-800/50 transition active:scale-95"
-              title="Chat on WhatsApp"
-            >
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-            </a>
+            <!-- Row 2: 3 Quick Action Buttons (WhatsApp, Call, Delete) -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <a 
+                href="${waUrl}" 
+                target="_blank" 
+                class="flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-green-950/60 hover:bg-green-900 text-green-400 border border-green-800/50 text-[11px] font-medium transition active:scale-95"
+                title="Open in WhatsApp Web / App"
+              >
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                <span>WhatsApp</span>
+              </a>
 
-            <!-- Call 1-Touch Button -->
-            <a 
-              href="tel:${lead.phone}" 
-              class="flex items-center justify-center py-1.5 rounded-lg bg-sky-950/70 hover:bg-sky-900 text-sky-400 border border-sky-800/50 transition active:scale-95"
-              title="Call"
-            >
-              <i data-lucide="phone" class="w-4 h-4"></i>
-            </a>
+              <a 
+                href="tel:${lead.phone}" 
+                class="flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-sky-950/60 hover:bg-sky-900 text-sky-400 border border-sky-800/50 text-[11px] font-medium transition active:scale-95"
+                title="Call Customer"
+              >
+                <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+                <span>Call</span>
+              </a>
+
+              <button 
+                onclick="promptDeleteLead('${lead.id}', '${escapeHtml(lead.name)}')" 
+                class="flex items-center justify-center space-x-1 py-1.5 rounded-lg bg-zinc-900 hover:bg-red-950/60 text-zinc-500 hover:text-red-400 border border-zinc-800 text-[11px] font-medium transition active:scale-95"
+                title="Delete Lead"
+              >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -664,7 +704,13 @@ function renderKanban() {
             <div class="glass-card glass-card-hover p-3 rounded-xl border border-zinc-800/80 space-y-2 bg-zinc-900/90 shadow-sm">
               <div class="flex items-start justify-between gap-1.5">
                 <div class="min-w-0">
-                  <h5 class="text-xs font-bold text-white truncate">${escapeHtml(lead.name)}</h5>
+                  <h5 
+                    onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                    class="text-xs font-bold text-white hover:text-emerald-400 cursor-pointer transition truncate"
+                    title="Click to open CRM Chat"
+                  >
+                    ${escapeHtml(lead.name)}
+                  </h5>
                   <a href="tel:${lead.phone}" class="text-[11px] text-zinc-400 hover:text-sky-400 font-mono">${escapeHtml(lead.phone)}</a>
                 </div>
                 <div class="shrink-0">
@@ -676,21 +722,29 @@ function renderKanban() {
                 ${escapeHtml(lead.service)}
               </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-zinc-800/60 text-[11px] text-zinc-500">
+              <!-- Showcased CRM Chat Action Bar -->
+              <button 
+                onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                class="w-full flex items-center justify-center space-x-1.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition active:scale-95 shadow-sm"
+                title="Open inside CRM Live Chat"
+              >
+                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                <span>Open CRM Chat</span>
+              </button>
+
+              <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800/60 text-[11px] text-zinc-500">
                 <span>${formatTimeAgo(lead.created_at)}</span>
 
+                <!-- 3 Quick Action Buttons: WhatsApp, Call, Delete -->
                 <div class="flex items-center space-x-1.5">
-                  <button onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" class="p-1 rounded bg-zinc-800 text-zinc-300 hover:text-green-400 hover:bg-zinc-700 border border-zinc-700" title="Open in CRM Inbox">
-                    <i data-lucide="message-square" class="w-3 h-3"></i>
-                  </button>
-                  <a href="${waUrl}" target="_blank" class="p-1 rounded bg-green-950 text-green-400 hover:bg-green-900 border border-green-800/40" title="WhatsApp">
-                    <i data-lucide="message-circle" class="w-3 h-3"></i>
+                  <a href="${waUrl}" target="_blank" class="p-1.5 rounded-lg bg-green-950/60 text-green-400 hover:bg-green-900 border border-green-800/40 transition active:scale-95" title="Open WhatsApp Web / App">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
                   </a>
-                  <a href="tel:${lead.phone}" class="p-1 rounded bg-sky-950 text-sky-400 hover:bg-sky-900 border border-sky-800/40" title="Call">
-                    <i data-lucide="phone" class="w-3 h-3"></i>
+                  <a href="tel:${lead.phone}" class="p-1.5 rounded-lg bg-sky-950/60 text-sky-400 hover:bg-sky-900 border border-sky-800/40 transition active:scale-95" title="Call Customer">
+                    <i data-lucide="phone" class="w-3.5 h-3.5"></i>
                   </a>
-                  <button onclick="promptDeleteLead('${lead.id}', '${escapeHtml(lead.name)}')" class="p-1 rounded bg-zinc-900 text-zinc-500 hover:text-red-400 hover:bg-red-950 border border-zinc-800" title="Delete">
-                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                  <button onclick="promptDeleteLead('${lead.id}', '${escapeHtml(lead.name)}')" class="p-1.5 rounded-lg bg-zinc-900 text-zinc-500 hover:text-red-400 hover:bg-red-950 border border-zinc-800 transition active:scale-95" title="Delete Lead">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
