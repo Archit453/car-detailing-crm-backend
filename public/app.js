@@ -83,7 +83,6 @@ const elements = {
   btnConfirmDelete: document.getElementById('btn-confirm-delete'),
 
   toastContainer: document.getElementById('toast-container'),
-  btnLogout: document.getElementById('btn-logout'),
 };
 
 // Initialize Dashboard
@@ -94,11 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  // Logout Listener
-  if (elements.btnLogout) {
-    elements.btnLogout.addEventListener('click', handleLogout);
-  }
-
   // Search & Filter Listeners
   elements.searchInput.addEventListener('input', (e) => {
     state.searchQuery = e.target.value.toLowerCase().trim();
@@ -165,27 +159,11 @@ function setupEventListeners() {
   elements.btnConfirmDelete.addEventListener('click', confirmDeleteLead);
 }
 
-// Handle Admin Logout
-async function handleLogout() {
-  try {
-    await fetch('/api/auth/logout', { method: 'POST' });
-  } catch (err) {
-    console.error('[Logout Error]', err);
-  }
-  window.location.href = '/login';
-}
-
 // Fetch Leads from Backend API
 async function fetchLeads() {
   state.loading = true;
   try {
     const res = await fetch('/api/leads?limit=100&sortBy=created_at&order=desc');
-
-    if (res.status === 401) {
-      window.location.href = '/login';
-      return;
-    }
-
     const json = await res.json();
 
     if (!res.ok || !json.success) {

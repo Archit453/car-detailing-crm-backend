@@ -7,7 +7,6 @@ import {
   deleteLead,
 } from '../controllers/lead.controller.js';
 import { validate } from '../middlewares/validate.js';
-import { requireAuth } from '../middlewares/auth.js';
 import {
   createLeadSchema,
   updateLeadStatusSchema,
@@ -20,19 +19,18 @@ const router = Router();
 // Lead collection routes
 router
   .route('/')
-  .post(validate({ body: createLeadSchema }), createLead) // PUBLIC for website lead submissions
-  .get(requireAuth, validate({ query: listLeadsQuerySchema }), getLeads); // PROTECTED for CRM Admin
+  .post(validate({ body: createLeadSchema }), createLead)
+  .get(validate({ query: listLeadsQuerySchema }), getLeads);
 
-// Single lead item routes (PROTECTED for CRM Admin)
+// Single lead item routes
 router
   .route('/:id')
-  .get(requireAuth, validate({ params: leadIdParamSchema }), getLeadById)
-  .delete(requireAuth, validate({ params: leadIdParamSchema }), deleteLead);
+  .get(validate({ params: leadIdParamSchema }), getLeadById)
+  .delete(validate({ params: leadIdParamSchema }), deleteLead);
 
-// Lead status update route (PROTECTED for CRM Admin)
+// Lead status update route
 router.patch(
   '/:id/status',
-  requireAuth,
   validate({ params: leadIdParamSchema, body: updateLeadStatusSchema }),
   updateLeadStatus
 );
