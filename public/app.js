@@ -33,6 +33,11 @@ const state = {
 
 // DOM Elements
 const elements = {
+  // Primary Top Navigation
+  navBtnInbox: document.getElementById('nav-btn-inbox'),
+  mainNavLeads: document.getElementById('main-nav-leads'),
+  mainNavInbox: document.getElementById('main-nav-inbox'),
+
   // KPI Stats
   statTotal: document.getElementById('stat-total'),
   statNew: document.getElementById('stat-new'),
@@ -90,6 +95,10 @@ const elements = {
   formInboxSend: document.getElementById('form-inbox-send'),
   inboxInputMessage: document.getElementById('inbox-input-message'),
   btnInboxSend: document.getElementById('btn-inbox-send'),
+  composerBotStatusBadge: document.getElementById('composer-bot-status-badge'),
+  btnToggleBotComposer: document.getElementById('btn-toggle-bot-composer'),
+  btnToggleBotComposerText: document.getElementById('btn-toggle-bot-composer-text'),
+  iconToggleBotComposer: document.getElementById('icon-toggle-bot-composer'),
 
   // Kanban Columns
   kanbanCols: {
@@ -207,8 +216,24 @@ function setupEventListeners() {
   if (elements.btnToggleBot) {
     elements.btnToggleBot.addEventListener('click', () => handleToggleBot());
   }
+  if (elements.btnToggleBotComposer) {
+    elements.btnToggleBotComposer.addEventListener('click', () => handleToggleBot());
+  }
   if (elements.btnResumeBotBanner) {
     elements.btnResumeBotBanner.addEventListener('click', () => handleToggleBot(true));
+  }
+  if (elements.navBtnInbox) {
+    elements.navBtnInbox.addEventListener('click', () => switchView('inbox'));
+  }
+  if (elements.mainNavLeads) {
+    elements.mainNavLeads.addEventListener('click', () => switchView('table'));
+  }
+  if (elements.mainNavInbox) {
+    elements.mainNavInbox.addEventListener('click', () => switchView('inbox'));
+  }
+  const cardMetricWhatsapp = document.getElementById('card-metric-whatsapp');
+  if (cardMetricWhatsapp) {
+    cardMetricWhatsapp.addEventListener('click', () => switchView('inbox'));
   }
 
   // Pagination
@@ -353,6 +378,17 @@ function switchView(mode) {
       el.classList.add('text-zinc-400');
     }
   });
+
+  // Update Primary Top Navigation Tabs
+  if (elements.mainNavLeads && elements.mainNavInbox) {
+    if (mode === 'inbox') {
+      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-green-600 text-white shadow-lg shadow-green-600/20';
+      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800';
+    } else {
+      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-sky-600 text-white shadow-lg shadow-sky-600/20';
+      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800';
+    }
+  }
 
   if (mode === 'table') {
     renderTable();
@@ -1093,32 +1129,65 @@ function updateBotStatusUI(isPaused) {
 
   if (elements.inboxBotBadge && elements.inboxBotBadgeText && elements.inboxBotDot) {
     if (isPaused) {
-      elements.inboxBotBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-400 border border-amber-800/60 flex items-center space-x-1';
-      elements.inboxBotDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+      elements.inboxBotBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950/90 text-amber-400 border border-amber-800/80 flex items-center space-x-1.5 shadow-sm';
+      elements.inboxBotDot.className = 'w-2 h-2 rounded-full bg-amber-400';
       elements.inboxBotBadgeText.textContent = 'Bot Paused';
     } else {
-      elements.inboxBotBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-950/80 text-green-400 border border-green-800/60 flex items-center space-x-1';
-      elements.inboxBotDot.className = 'w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse';
+      elements.inboxBotBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-green-950/90 text-green-400 border border-green-800/80 flex items-center space-x-1.5 shadow-sm';
+      elements.inboxBotDot.className = 'w-2 h-2 rounded-full bg-green-400 animate-pulse';
       elements.inboxBotBadgeText.textContent = 'Bot Active';
     }
   }
 
+  // Chat Header Toggle Button
   if (elements.btnToggleBot && elements.btnToggleBotText) {
     if (isPaused) {
+      elements.btnToggleBot.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/40 shadow-sm transition active:scale-95';
       elements.btnToggleBotText.textContent = 'Resume Bot';
       if (elements.iconToggleBot) {
         elements.iconToggleBot.setAttribute('data-lucide', 'play-circle');
-        elements.iconToggleBot.className = 'w-3.5 h-3.5 text-green-400';
+        elements.iconToggleBot.className = 'w-4 h-4 text-green-400';
       }
     } else {
+      elements.btnToggleBot.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm transition active:scale-95';
       elements.btnToggleBotText.textContent = 'Pause Bot';
       if (elements.iconToggleBot) {
         elements.iconToggleBot.setAttribute('data-lucide', 'pause-circle');
-        elements.iconToggleBot.className = 'w-3.5 h-3.5 text-amber-400';
+        elements.iconToggleBot.className = 'w-4 h-4 text-amber-400';
       }
     }
-    lucide.createIcons();
   }
+
+  // Composer Bar Bot Status & Toggle Button
+  if (elements.composerBotStatusBadge) {
+    if (isPaused) {
+      elements.composerBotStatusBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-950 text-amber-400 border border-amber-800/80';
+      elements.composerBotStatusBadge.textContent = '⏸️ Bot Paused (Human Takeover)';
+    } else {
+      elements.composerBotStatusBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-950 text-green-400 border border-green-800/80';
+      elements.composerBotStatusBadge.textContent = '🟢 Bot Active';
+    }
+  }
+
+  if (elements.btnToggleBotComposer && elements.btnToggleBotComposerText) {
+    if (isPaused) {
+      elements.btnToggleBotComposer.className = 'text-xs px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-green-300 border border-zinc-700 font-bold transition flex items-center space-x-1 active:scale-95';
+      elements.btnToggleBotComposerText.textContent = 'Resume Bot';
+      if (elements.iconToggleBotComposer) {
+        elements.iconToggleBotComposer.setAttribute('data-lucide', 'play-circle');
+        elements.iconToggleBotComposer.className = 'w-3.5 h-3.5 text-green-400';
+      }
+    } else {
+      elements.btnToggleBotComposer.className = 'text-xs px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700 font-bold transition flex items-center space-x-1 active:scale-95';
+      elements.btnToggleBotComposerText.textContent = 'Pause Bot';
+      if (elements.iconToggleBotComposer) {
+        elements.iconToggleBotComposer.setAttribute('data-lucide', 'pause-circle');
+        elements.iconToggleBotComposer.className = 'w-3.5 h-3.5 text-amber-400';
+      }
+    }
+  }
+
+  lucide.createIcons();
 
   if (elements.inboxHumanBanner) {
     elements.inboxHumanBanner.classList.toggle('hidden', !isPaused);
