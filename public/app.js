@@ -2,6 +2,25 @@
  * Signature Detailing CRM Dashboard - Frontend Application Logic
  */
 
+// Meta WhatsApp Coexistence (Option 2) Configuration
+const META_CONFIG = {
+  appId: '1086490643745739',
+  configId: '2499074500567851',
+};
+
+// Initialize Facebook JavaScript SDK for Embedded Signup
+window.fbAsyncInit = function() {
+  if (typeof FB !== 'undefined') {
+    FB.init({
+      appId: META_CONFIG.appId,
+      autoLogAppEvents: true,
+      xfbml: true,
+      version: 'v21.0',
+    });
+    console.log('[Meta FB SDK] Initialized successfully for WhatsApp Embedded Signup');
+  }
+};
+
 // State Management
 const state = {
   leads: [],
@@ -125,6 +144,14 @@ const elements = {
   btnCancelDelete: document.getElementById('btn-cancel-delete'),
   btnConfirmDelete: document.getElementById('btn-confirm-delete'),
 
+  // WhatsApp Coexistence Modal
+  modalCoexistence: document.getElementById('modal-coexistence'),
+  btnOpenCoexistenceModal: document.getElementById('btn-open-coexistence-modal'),
+  btnCloseCoexistenceModal: document.getElementById('btn-close-coexistence-modal'),
+  btnLaunchMetaSignup: document.getElementById('btn-launch-meta-signup'),
+  coexistenceStatusBanner: document.getElementById('coexistence-status-banner'),
+  coexistenceStatusText: document.getElementById('coexistence-status-text'),
+
   toastContainer: document.getElementById('toast-container'),
   btnLogout: document.getElementById('btn-logout'),
 };
@@ -137,6 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup Event Listeners
 function setupEventListeners() {
+  // Coexistence Modal Listeners
+  if (elements.btnOpenCoexistenceModal) {
+    elements.btnOpenCoexistenceModal.addEventListener('click', () => {
+      if (elements.modalCoexistence) elements.modalCoexistence.classList.remove('hidden');
+    });
+  }
+  if (elements.btnCloseCoexistenceModal) {
+    elements.btnCloseCoexistenceModal.addEventListener('click', () => {
+      if (elements.modalCoexistence) elements.modalCoexistence.classList.add('hidden');
+    });
+  }
+  if (elements.btnLaunchMetaSignup) {
+    elements.btnLaunchMetaSignup.addEventListener('click', launchMetaEmbeddedSignup);
+  }
+
   // Logout Listener
   if (elements.btnLogout) {
     elements.btnLogout.addEventListener('click', handleLogout);
@@ -1433,4 +1475,90 @@ function formatMessageClock(isoString) {
 // Expose openInboxChat and loadChatThread globally for inline onclick attributes
 window.openInboxChat = openInboxChat;
 window.loadChatThread = loadChatThread;
+
+/**
+ * Launch Meta Embedded Signup Popup for WhatsApp Coexistence (Option 2)
+ */
+function launchMetaEmbeddedSignup() {
+  if (typeof FB === 'undefined') {
+    showToast('Meta Facebook SDK is loading. If blocked, please allow scripts or disable ad blockers.', 'warning');
+    return;
+  }
+
+  showToast('Launching Meta WhatsApp Coexistence dialog...', 'info');
+
+  FB.login(function(response) {
+    if (response.authResponse && response.authResponse.code) {
+      console.log('[Meta Embedded Signup Code]', response.authResponse.code);
+      showToast('Linking WhatsApp Business account to CRM...', 'info');
+      handleCoexistenceSignupCallback({ code: response.authResponse.code });
+    } else {
+      console.log('[Meta Embedded Signup Response]', response);
+    }
+  }, {
+    config_id: META_CONFIG.configId,
+    response_type: 'code',
+    override_default_response_type: true,
+    extras: {
+      setup: {},
+      feature: 'whatsapp_embedded_signup',
+      version: 2,
+      sessionInfoVersion: 3,
+    },
+  });
+}
+
+/**
+ * Listen for Meta Embedded Signup postMessage events from the popup
+ */
+window.addEventListener('message', async (event) => {
+  if (event.origin !== 'https://www.facebook.com' && event.origin !== 'https://web.facebook.com') {
+    return;
+  }
+
+  try {
+    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+    if (data?.type === 'WA_EMBEDDED_SIGNUP') {
+      console.log('[Meta WA_EMBEDDED_SIGNUP Event]', data);
+      if (data.event === 'FINISH' || data.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+        const { phone_number_id, waba_id } = data.data || {};
+        showToast('WhatsApp Coexistence successfully completed on Meta!', 'success');
+        await handleCoexistenceSignupCallback({
+          phoneNumberId: phone_number_id,
+          wabaId: waba_id,
+        });
+      } else if (data.event === 'CANCEL') {
+        showToast('WhatsApp setup was cancelled.', 'info');
+      }
+    }
+  } catch (err) {
+    // Ignore non-JSON messages from other browser extensions
+  }
+});
+
+/**
+ * Send Embedded Signup completion data to CRM Backend
+ */
+async function handleCoexistenceSignupCallback(payload) {
+  try {
+    const res = await fetch('/api/inbox/whatsapp/embedded-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to link Coexistence');
+
+    if (elements.coexistenceStatusBanner && elements.coexistenceStatusText) {
+      elements.coexistenceStatusText.textContent = 'WhatsApp Coexistence successfully active! Your phone app & CRM are synced.';
+      elements.coexistenceStatusBanner.classList.remove('hidden');
+    }
+
+    showToast('WhatsApp Coexistence is now ACTIVE! Phone & CRM synced.', 'success');
+  } catch (err) {
+    console.error('[Coexistence Registration Error]', err);
+    showToast(err.message, 'error');
+  }
+}
 

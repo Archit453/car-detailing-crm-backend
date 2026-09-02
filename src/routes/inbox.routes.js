@@ -4,6 +4,7 @@ import {
   getMessagesByPhone,
   sendManualMessage,
   toggleBotStatus,
+  handleEmbeddedSignup,
 } from '../controllers/inbox.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -23,6 +24,9 @@ router.post('/whatsapp/send', sendManualMessage);
 
 // Toggle automated bot pause / resume for a customer
 router.post('/whatsapp/bot-toggle', toggleBotStatus);
+
+// Complete Meta Embedded Signup for WhatsApp Coexistence
+router.post('/whatsapp/embedded-signup', handleEmbeddedSignup);
 
 export default router;
 

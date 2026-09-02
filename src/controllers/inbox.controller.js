@@ -1,4 +1,5 @@
 import { supabase, isConfigured } from '../config/supabase.js';
+import { config } from '../config/env.js';
 import { ApiError } from '../utils/apiError.js';
 import { successResponse, createdResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -213,4 +214,31 @@ export const toggleBotStatus = asyncHandler(async (req, res) => {
 
     return successResponse(res, { phone: cleanPhone, botPaused: true }, 'Bot paused for human takeover');
   }
+});
+
+/**
+ * Handles completion of Meta Embedded Signup for WhatsApp Coexistence
+ */
+export const handleEmbeddedSignup = asyncHandler(async (req, res) => {
+  const { code, phoneNumberId, wabaId } = req.body;
+
+  console.log('[Meta Embedded Signup Callback Received]', {
+    codeReceived: Boolean(code),
+    phoneNumberId,
+    wabaId,
+  });
+
+  if (phoneNumberId) {
+    config.whatsapp.phoneNumberId = String(phoneNumberId);
+  }
+
+  return successResponse(
+    res,
+    {
+      phoneNumberId: phoneNumberId || config.whatsapp.phoneNumberId,
+      wabaId: wabaId || null,
+      coexistenceActive: true,
+    },
+    'WhatsApp Coexistence successfully connected to your CRM!'
+  );
 });

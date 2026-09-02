@@ -340,7 +340,21 @@ async function runTests() {
     assert(echoJson.status === 'coexistence_echo_handled', 'Webhook handles coexistence phone echo');
     assert(echoJson.human_takeover === true, 'Coexistence phone reply automatically activates human takeover');
 
-    // Test 28: POST /api/auth/logout clears session
+    // Test 28: Meta Embedded Signup Coexistence callback endpoint
+    const signupRes = await fetch(`${baseUrl}/api/inbox/whatsapp/embedded-signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({
+        code: 'test_meta_auth_code_123',
+        phoneNumberId: '1344182455438369',
+        wabaId: 'test_waba_id_456',
+      }),
+    });
+    const signupJson = await signupRes.json();
+    assert(signupRes.status === 200, 'POST /api/inbox/whatsapp/embedded-signup returns 200 OK');
+    assert(signupJson.data?.coexistenceActive === true, 'Coexistence confirmed active from signup');
+
+    // Test 29: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },
