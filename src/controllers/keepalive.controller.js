@@ -50,3 +50,4 @@ export const pingDatabase = asyncHandler(async (req, res) => {
     'Supabase keepalive ping successful'
   );
 });
+

@@ -107,3 +107,4 @@ export const getMe = asyncHandler(async (req, res) => {
     'Session is active'
   );
 });
+

@@ -90,3 +90,4 @@ export function parseCookies(cookieHeader) {
 }
 
 export { SESSION_COOKIE_NAME, DEFAULT_MAX_AGE_SECONDS };
+

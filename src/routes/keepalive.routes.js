@@ -8,3 +8,4 @@ router.get('/', pingDatabase);
 router.post('/', pingDatabase);
 
 export default router;
+
