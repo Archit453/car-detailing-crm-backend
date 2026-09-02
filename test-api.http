@@ -1,0 +1,64 @@
+### Variables
+@baseUrl = http://localhost:5000
+@leadId = 123e4567-e89b-12d3-a456-426614174000
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### 2. API Info
+GET {{baseUrl}}/api
+
+### 3. Create a Lead (Full Detail)
+POST {{baseUrl}}/api/leads
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson",
+  "phone": "+1-555-0199",
+  "service": "Ceramic Coating",
+  "source": "website",
+  "status": "new"
+}
+
+### 4. Create a Second Lead (Interior Detail)
+POST {{baseUrl}}/api/leads
+Content-Type: application/json
+
+{
+  "name": "David Miller",
+  "phone": "+1-555-8833",
+  "service": "Full Detail",
+  "source": "instagram"
+}
+
+### 5. Get All Leads (Paginated)
+GET {{baseUrl}}/api/leads?page=1&limit=10
+
+### 6. Filter Leads by Status
+GET {{baseUrl}}/api/leads?status=new
+
+### 7. Search Leads by Name or Phone
+GET {{baseUrl}}/api/leads?search=Alex
+
+### 8. Get Single Lead by ID
+# Replace {{leadId}} with a real UUID returned from POST /api/leads
+GET {{baseUrl}}/api/leads/{{leadId}}
+
+### 9. Update Lead Status
+PATCH {{baseUrl}}/api/leads/{{leadId}}/status
+Content-Type: application/json
+
+{
+  "status": "scheduled"
+}
+
+### 10. Delete Lead by ID
+DELETE {{baseUrl}}/api/leads/{{leadId}}
+
+### 11. Test Validation Error (Missing required fields)
+POST {{baseUrl}}/api/leads
+Content-Type: application/json
+
+{
+  "name": "A"
+}

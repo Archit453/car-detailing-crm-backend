@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Signature Detailing | CRM Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+              accent: '#38bdf8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen antialiased flex flex-col selection:bg-sky-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 w-full border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center space-x-1.5 sm:space-x-2">
+            <h1 class="text-sm sm:text-lg font-bold tracking-tight text-white font-display truncate">Signature Detailing</h1>
+            <span class="shrink-0 px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">CRM</span>
+          </div>
+          <p class="text-[11px] text-zinc-400 truncate hidden sm:block">Leads & Customer Pipeline</p>
+        </div>
+      </div>
+
+      <!-- Action Center -->
+      <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+        <!-- Live Connection Status Badge -->
+        <div class="hidden lg:flex items-center space-x-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot"></span>
+          <span class="text-zinc-300 font-medium">Supabase Live</span>
+        </div>
+
+        <!-- Refresh Button -->
+        <button id="btn-refresh" title="Refresh leads" class="p-2 sm:p-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition active:scale-95">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Export CSV Button -->
+        <button id="btn-export-csv" class="hidden md:flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-medium transition active:scale-95">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Export CSV</span>
+        </button>
+
+        <!-- Add New Lead Button -->
+        <button id="btn-open-add-modal" class="flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20 transition transform active:scale-95">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span>Add Lead</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-4 sm:space-y-6">
+
+    <!-- KPI Metric Cards Grid -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+      
+      <!-- Metric: Total Leads -->
+      <div class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">Total Leads</p>
+          <h3 id="stat-total" class="text-xl sm:text-2xl font-bold text-white mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 truncate">All inquiries</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-sky-400 shrink-0 ml-1">
+          <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+      <!-- Metric: New Inquiries -->
+      <div class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">New Inquiries</p>
+          <h3 id="stat-new" class="text-xl sm:text-2xl font-bold text-cyan-400 mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-cyan-500/80 mt-0.5 truncate">Needs follow-up</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-cyan-950/40 border border-cyan-900/50 flex items-center justify-center text-cyan-400 shrink-0 ml-1">
+          <i data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+      <!-- Metric: Scheduled / In Progress -->
+      <div class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">Active Jobs</p>
+          <h3 id="stat-active" class="text-xl sm:text-2xl font-bold text-amber-400 mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-amber-500/80 mt-0.5 truncate">Scheduled & Garage</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-950/40 border border-amber-900/50 flex items-center justify-center text-amber-400 shrink-0 ml-1">
+          <i data-lucide="calendar" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+      <!-- Metric: Completed -->
+      <div class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">Completed</p>
+          <h3 id="stat-completed" class="text-xl sm:text-2xl font-bold text-emerald-400 mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-emerald-500/80 mt-0.5 truncate">Delivered cars</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-950/40 border border-emerald-900/50 flex items-center justify-center text-emerald-400 shrink-0 ml-1">
+          <i data-lucide="check-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+      <!-- Metric: WhatsApp Channel Leads -->
+      <div class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 col-span-2 sm:col-span-1 shadow-sm">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">WhatsApp Leads</p>
+          <h3 id="stat-whatsapp" class="text-xl sm:text-2xl font-bold text-green-400 mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 truncate"><span id="stat-website">0</span> from Website</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-950/40 border border-green-900/50 flex items-center justify-center text-green-400 shrink-0 ml-1">
+          <i data-lucide="message-square" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Controls Bar: Search, Filters & View Toggle -->
+    <section class="glass-card p-3.5 sm:p-4 rounded-xl border border-zinc-800/90 flex flex-col gap-3">
+      
+      <!-- Search Input -->
+      <div class="relative w-full">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"></i>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search by customer name, phone, or service..." 
+          class="w-full bg-zinc-900/90 text-zinc-100 placeholder-zinc-500 pl-10 pr-4 py-2.5 rounded-lg border border-zinc-800 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-xs sm:text-sm transition"
+        >
+      </div>
+
+      <!-- Filter Controls Row (Responsive Grid on Mobile) -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        
+        <div class="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2">
+          <!-- Filter: Status -->
+          <select id="filter-status" class="w-full sm:w-auto bg-zinc-900 text-zinc-300 text-xs rounded-lg border border-zinc-800 px-2.5 py-2 focus:outline-none focus:border-sky-500 cursor-pointer">
+            <option value="">Status (All)</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+
+          <!-- Filter: Service -->
+          <select id="filter-service" class="w-full sm:w-auto bg-zinc-900 text-zinc-300 text-xs rounded-lg border border-zinc-800 px-2.5 py-2 focus:outline-none focus:border-sky-500 cursor-pointer">
+            <option value="">Service (All)</option>
+            <option value="PPF">PPF</option>
+            <option value="Ceramic Coating">Ceramic Coating</option>
+            <option value="Paint Correction">Paint Correction</option>
+            <option value="Interior Detailing">Interior Detailing</option>
+          </select>
+
+          <!-- Filter: Source -->
+          <select id="filter-source" class="w-full sm:w-auto bg-zinc-900 text-zinc-300 text-xs rounded-lg border border-zinc-800 px-2.5 py-2 focus:outline-none focus:border-sky-500 cursor-pointer">
+            <option value="">Source (All)</option>
+            <option value="website">Website</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="referral">Referral</option>
+            <option value="walk_in">Walk-in</option>
+          </select>
+        </div>
+
+        <!-- View Switcher & Mobile Export -->
+        <div class="flex items-center justify-between sm:justify-end space-x-2">
+          <button id="btn-export-csv-mobile" class="md:hidden flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-300 border border-zinc-800 text-xs font-medium">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export</span>
+          </button>
+
+          <div class="flex items-center p-1 rounded-lg bg-zinc-900 border border-zinc-800">
+            <button id="view-toggle-table" class="px-3 py-1 rounded text-xs font-medium transition flex items-center space-x-1.5 bg-zinc-800 text-white shadow">
+              <i data-lucide="list" class="w-3.5 h-3.5"></i>
+              <span>Table</span>
+            </button>
+            <button id="view-toggle-kanban" class="px-3 py-1 rounded text-xs font-medium transition flex items-center space-x-1.5 text-zinc-400 hover:text-zinc-200">
+              <i data-lucide="columns-3" class="w-3.5 h-3.5"></i>
+              <span>Kanban</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Table View Container -->
+    <section id="table-view-container" class="glass-card rounded-xl border border-zinc-800 overflow-hidden shadow-xl">
+      
+      <!-- Desktop Table (Hidden on small mobile screens) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left text-sm text-zinc-300">
+          <thead class="bg-zinc-900/80 text-[11px] uppercase tracking-wider text-zinc-400 border-b border-zinc-800 font-semibold">
+            <tr>
+              <th scope="col" class="py-3.5 px-4">Customer</th>
+              <th scope="col" class="py-3.5 px-4">Phone Number</th>
+              <th scope="col" class="py-3.5 px-4">Requested Service</th>
+              <th scope="col" class="py-3.5 px-4">Source</th>
+              <th scope="col" class="py-3.5 px-4">Status</th>
+              <th scope="col" class="py-3.5 px-4">Inquiry Date</th>
+              <th scope="col" class="py-3.5 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leads-table-body" class="divide-y divide-zinc-800/60 font-normal">
+            <!-- Dynamic rows inserted by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card Feed View (Shown on screens < 768px) -->
+      <div id="leads-mobile-list" class="md:hidden divide-y divide-zinc-800/60">
+        <!-- Dynamic mobile cards inserted by JavaScript -->
+      </div>
+      
+      <!-- Table Pagination Footer -->
+      <div class="px-4 py-3 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between text-xs text-zinc-400">
+        <div id="table-pagination-info">Showing 0 of 0 leads</div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-prev-page" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 transition">Prev</button>
+          <span id="pagination-current-page" class="font-medium text-white">Page 1</span>
+          <button id="btn-next-page" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 transition">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kanban Board View Container (Horizontal Snap Carousel on Mobile, Grid on Desktop) -->
+    <section id="kanban-view-container" class="hidden">
+      <div class="flex md:grid md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 md:pb-0">
+        
+        <!-- Column 1: New -->
+        <div class="snap-center shrink-0 w-[280px] sm:w-[300px] md:w-auto glass-card rounded-xl border border-zinc-800 p-3 flex flex-col space-y-3 bg-zinc-900/40 min-h-[480px]">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+              <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">New</h4>
+            </div>
+            <span id="kanban-count-new" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">0</span>
+          </div>
+          <div id="kanban-column-new" class="flex-1 space-y-2.5 overflow-y-auto"></div>
+        </div>
+
+        <!-- Column 2: Contacted -->
+        <div class="snap-center shrink-0 w-[280px] sm:w-[300px] md:w-auto glass-card rounded-xl border border-zinc-800 p-3 flex flex-col space-y-3 bg-zinc-900/40 min-h-[480px]">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+              <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Contacted</h4>
+            </div>
+            <span id="kanban-count-contacted" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-950/60 text-purple-400 border border-purple-800/40">0</span>
+          </div>
+          <div id="kanban-column-contacted" class="flex-1 space-y-2.5 overflow-y-auto"></div>
+        </div>
+
+        <!-- Column 3: Scheduled -->
+        <div class="snap-center shrink-0 w-[280px] sm:w-[300px] md:w-auto glass-card rounded-xl border border-zinc-800 p-3 flex flex-col space-y-3 bg-zinc-900/40 min-h-[480px]">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Scheduled</h4>
+            </div>
+            <span id="kanban-count-scheduled" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-950/60 text-blue-400 border border-blue-800/40">0</span>
+          </div>
+          <div id="kanban-column-scheduled" class="flex-1 space-y-2.5 overflow-y-auto"></div>
+        </div>
+
+        <!-- Column 4: In Progress -->
+        <div class="snap-center shrink-0 w-[280px] sm:w-[300px] md:w-auto glass-card rounded-xl border border-zinc-800 p-3 flex flex-col space-y-3 bg-zinc-900/40 min-h-[480px]">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">In Progress</h4>
+            </div>
+            <span id="kanban-count-in_progress" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-950/60 text-amber-400 border border-amber-800/40">0</span>
+          </div>
+          <div id="kanban-column-in_progress" class="flex-1 space-y-2.5 overflow-y-auto"></div>
+        </div>
+
+        <!-- Column 5: Completed -->
+        <div class="snap-center shrink-0 w-[280px] sm:w-[300px] md:w-auto glass-card rounded-xl border border-zinc-800 p-3 flex flex-col space-y-3 bg-zinc-900/40 min-h-[480px]">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h4 class="text-xs font-bold text-zinc-200 uppercase tracking-wider">Completed</h4>
+            </div>
+            <span id="kanban-count-completed" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">0</span>
+          </div>
+          <div id="kanban-column-completed" class="flex-1 space-y-2.5 overflow-y-auto"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Add New Lead -->
+  <div id="modal-add-lead" class="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="glass-card w-full max-w-md rounded-2xl border border-zinc-700/80 p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-base font-bold text-white font-display">Add New Lead</h3>
+        </div>
+        <button id="btn-close-add-modal" class="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-add-lead" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1">Customer Full Name *</label>
+          <input type="text" id="add-name" required placeholder="e.g. Rahul Sharma" class="w-full bg-zinc-900 text-white text-sm rounded-lg border border-zinc-800 px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1">Phone Number (with Country Code) *</label>
+          <input type="tel" id="add-phone" required placeholder="e.g. +91 98765 43210" class="w-full bg-zinc-900 text-white text-sm rounded-lg border border-zinc-800 px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Requested Service *</label>
+            <select id="add-service" class="w-full bg-zinc-900 text-white text-xs rounded-lg border border-zinc-800 px-3 py-2.5 focus:outline-none focus:border-sky-500">
+              <option value="PPF">PPF (Paint Protection)</option>
+              <option value="Ceramic Coating">Ceramic Coating</option>
+              <option value="Paint Correction">Paint Correction</option>
+              <option value="Interior Detailing">Interior Detailing</option>
+              <option value="Full Detail Package">Full Detail Package</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Lead Source *</label>
+            <select id="add-source" class="w-full bg-zinc-900 text-white text-xs rounded-lg border border-zinc-800 px-3 py-2.5 focus:outline-none focus:border-sky-500">
+              <option value="walk_in">Walk-in Customer</option>
+              <option value="phone_call">Direct Phone Call</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="website">Website Form</option>
+              <option value="referral">Friend Referral</option>
+              <option value="instagram">Instagram</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1">Initial Status</label>
+          <select id="add-status" class="w-full bg-zinc-900 text-white text-xs rounded-lg border border-zinc-800 px-3 py-2.5 focus:outline-none focus:border-sky-500">
+            <option value="new">New (Uncontacted)</option>
+            <option value="contacted">Contacted</option>
+            <option value="scheduled">Scheduled for Garage</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2.5 pt-2">
+          <button type="button" id="btn-cancel-add-modal" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">Cancel</button>
+          <button type="submit" id="btn-submit-add-lead" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 transition flex items-center space-x-1.5 active:scale-95">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Save Lead</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Delete Confirmation -->
+  <div id="modal-delete-lead" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+    <div class="glass-card w-full max-w-sm rounded-2xl border border-red-900/50 p-5 sm:p-6 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 rounded-full bg-red-950/60 border border-red-800/60 text-red-400 flex items-center justify-center mx-auto">
+        <i data-lucide="trash-2" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">Delete Lead</h3>
+        <p class="text-xs text-zinc-400 mt-1">Are you sure you want to delete <span id="delete-lead-name" class="font-semibold text-white"></span>? This action cannot be undone.</p>
+      </div>
+      <div class="flex items-center justify-center space-x-3 pt-2">
+        <button id="btn-cancel-delete" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">Cancel</button>
+        <button id="btn-confirm-delete" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-600/30 transition active:scale-95">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-4 sm:bottom-5 right-4 sm:right-5 z-50 flex flex-col space-y-2 pointer-events-none max-w-[calc(100vw-2rem)]"></div>
+
+  <!-- Application Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>
