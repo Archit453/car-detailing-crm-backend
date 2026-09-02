@@ -36,4 +36,12 @@ export const config = {
     verifyToken: process.env.INSTAGRAM_VERIFY_TOKEN || 'signature_crm_verify_token',
     pageAccessToken: process.env.INSTAGRAM_PAGE_ACCESS_TOKEN || process.env.META_PAGE_ACCESS_TOKEN || '',
   },
+  auth: {
+    adminUsername: process.env.ADMIN_USERNAME || 'admin',
+    adminPassword: process.env.ADMIN_PASSWORD || 'SignatureCRM@2026!',
+    sessionSecret: process.env.SESSION_SECRET || 'crm_secret_key_signature_detailing_2026_super_secure',
+  },
+  cron: {
+    secret: process.env.CRON_SECRET || '',
+  },
 };
