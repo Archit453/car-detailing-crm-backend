@@ -423,17 +423,29 @@
               </div>
             </div>
 
-            <!-- Header Quick Actions -->
-            <div id="inbox-header-actions" class="hidden flex-wrap items-center gap-2">
-              <span id="inbox-bot-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-950/80 text-green-400 border border-green-800/60 flex items-center space-x-1.5 shadow-sm">
-                <span id="inbox-bot-dot" class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span id="inbox-bot-badge-text">Bot Active</span>
-              </span>
-
-              <button id="btn-toggle-bot" title="Pause or Resume automated bot for this customer" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm transition active:scale-95">
-                <i data-lucide="pause-circle" id="icon-toggle-bot" class="w-4 h-4 text-amber-400"></i>
-                <span id="btn-toggle-bot-text">Pause Bot</span>
-              </button>
+            <!-- Header Quick Actions: 2 Options (Bot Active & Bot Inactive) -->
+            <div id="inbox-header-actions" class="hidden flex-wrap items-center gap-2.5">
+              <!-- Segmented Bot Control (Bot Active vs Bot Inactive) -->
+              <div class="inline-flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs shadow-inner">
+                <button 
+                  type="button" 
+                  id="btn-bot-active" 
+                  title="Activate automated bot for this customer" 
+                  class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-green-600 text-white shadow active:scale-95"
+                >
+                  <span id="dot-bot-active" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                  <span>Bot Active</span>
+                </button>
+                <button 
+                  type="button" 
+                  id="btn-bot-inactive" 
+                  title="Deactivate bot (Human mode)" 
+                  class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition active:scale-95"
+                >
+                  <span id="dot-bot-inactive" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                  <span>Bot Inactive</span>
+                </button>
+              </div>
 
               <a id="btn-inbox-open-wa" href="#" target="_blank" rel="noopener noreferrer" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-green-950/60 hover:bg-green-900/60 text-green-400 border border-green-800/60 text-xs font-medium transition">
                 <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
@@ -442,13 +454,13 @@
             </div>
           </div>
 
-          <!-- Human Takeover Alert Banner -->
-          <div id="inbox-human-banner" class="hidden px-4 py-2.5 bg-amber-950/50 border-b border-amber-900/60 flex items-center justify-between text-xs text-amber-300 shadow-inner">
+          <!-- Human Mode Alert Banner (Visible when Bot Inactive) -->
+          <div id="inbox-human-banner" class="hidden px-4 py-2 bg-amber-950/50 border-b border-amber-900/60 flex items-center justify-between text-xs text-amber-300 shadow-inner">
             <div class="flex items-center space-x-2">
               <i data-lucide="user-check" class="w-4 h-4 text-amber-400 shrink-0"></i>
-              <span><strong>Human Mode Active</strong> — The automated bot is paused for this customer.</span>
+              <span><strong>Bot Inactive (Human Mode)</strong> — Automated replies are silenced for this customer.</span>
             </div>
-            <button id="btn-resume-bot-banner" class="px-2.5 py-1 rounded-md bg-amber-900/60 hover:bg-amber-800 text-amber-200 text-xs font-bold transition ml-2 shrink-0 border border-amber-700/60">Resume Bot</button>
+            <button id="btn-resume-bot-banner" class="px-2.5 py-1 rounded-md bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition ml-2 shrink-0 shadow">Set Bot Active</button>
           </div>
 
           <!-- Messages Stream Container with Luxury Mesh Wallpaper -->
@@ -479,16 +491,16 @@
 
           <!-- Live Reply Composer -->
           <div id="inbox-composer-bar" class="hidden border-t border-zinc-800 bg-zinc-900/90">
-            <!-- Composer Bot Status & Takeover Bar -->
+            <!-- Composer Bot Status & Toggle Bar -->
             <div class="px-3.5 py-1.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center justify-between text-xs">
               <div class="flex items-center space-x-2">
-                <span class="text-zinc-400 font-medium">Bot Mode:</span>
-                <span id="composer-bot-status-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-950 text-green-400 border border-green-800/80">🟢 Active</span>
+                <span class="text-zinc-400 font-medium">Customer Chat:</span>
+                <span id="composer-bot-status-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-950 text-green-400 border border-green-800/80">🟢 Bot Active</span>
               </div>
-              <button type="button" id="btn-toggle-bot-composer" class="text-xs px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-700 font-bold transition flex items-center space-x-1 active:scale-95">
-                <i data-lucide="pause-circle" id="icon-toggle-bot-composer" class="w-3.5 h-3.5 text-amber-400"></i>
-                <span id="btn-toggle-bot-composer-text">Pause Bot</span>
-              </button>
+              <div class="inline-flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-700/70 text-xs">
+                <button type="button" id="btn-composer-bot-active" class="px-2.5 py-0.5 rounded text-[11px] font-bold transition bg-green-600 text-white shadow-sm active:scale-95">Bot Active</button>
+                <button type="button" id="btn-composer-bot-inactive" class="px-2.5 py-0.5 rounded text-[11px] font-medium transition text-zinc-400 hover:text-white active:scale-95">Bot Inactive</button>
+              </div>
             </div>
 
             <form id="form-inbox-send" class="p-3 flex items-center space-x-2">
