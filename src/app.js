@@ -8,6 +8,7 @@ import { config } from './config/env.js';
 import apiRouter from './routes/index.js';
 import { notFound } from './middlewares/notFound.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { requireAuth } from './middlewares/auth.js';
 import { successResponse } from './utils/apiResponse.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,15 +59,20 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // Favicon Handler (prevents 404 logs from browser requests)
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-// CRM Frontend Dashboard UI
-app.get('/dashboard', (req, res) => {
+// Authentication Login UI
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(publicPath, 'login.html'));
+});
+
+// CRM Frontend Dashboard UI (Protected: Redirects unauthenticated users to /login)
+app.get('/dashboard', requireAuth, (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// Root Route - Base API status & index (with browser view support)
+// Root Route - Base API status & index (with browser redirect to /dashboard)
 app.get('/', (req, res) => {
   if (req.accepts('html') && !req.accepts('json')) {
-    return res.sendFile(path.join(publicPath, 'index.html'));
+    return res.redirect('/dashboard');
   }
 
   return successResponse(

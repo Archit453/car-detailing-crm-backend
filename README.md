@@ -46,25 +46,31 @@ A production-ready Express.js REST API backend for a Car Detailing CRM, integrat
 car-detailing-crm-backend/
 ├── api/
 │   └── index.js                   # Vercel serverless function entrypoint
-├── public/                        # 🖥️ CRM Frontend Dashboard (SPA)
+├── public/                        # 🖥️ CRM Frontend Dashboard & Login (SPA)
 │   ├── index.html                 # Modern responsive CRM dashboard UI
+│   ├── login.html                 # Automotive-themed admin login UI
 │   ├── styles.css                 # Dark automotive theme & glassmorphism
-│   └── app.js                     # Client state, filters, Kanban & API sync
+│   └── app.js                     # Client state, filters, Kanban, auth & API sync
 ├── src/
 │   ├── config/
 │   │   ├── env.js                 # Environment variable validation & config
 │   │   └── supabase.js            # Supabase client instance
 │   ├── controllers/
+│   │   ├── auth.controller.js     # Admin authentication & 30-day session cookies
+│   │   ├── keepalive.controller.js# Zero-egress Supabase database keepalive ping
 │   │   ├── lead.controller.js     # Leads business logic (CRUD & status updates)
 │   │   ├── whatsapp.controller.js # Meta WhatsApp Cloud API Bot handler
 │   │   └── instagram.controller.js# Meta Instagram Graph API Bot handler
 │   ├── middlewares/
+│   │   ├── auth.js                # Session authentication & route protection
 │   │   ├── errorHandler.js        # Global error handler & Postgres error mapper
 │   │   ├── notFound.js            # 404 Route handler
 │   │   └── validate.js            # Generic Zod validation middleware
 │   ├── routes/
 │   │   ├── index.js               # API route combiner (/api)
-│   │   ├── lead.routes.js         # /api/leads routes
+│   │   ├── auth.routes.js         # /api/auth routes (login, logout, me)
+│   │   ├── keepalive.routes.js    # /api/keepalive routes (Vercel Cron)
+│   │   ├── lead.routes.js         # /api/leads routes (Protected admin CRUD + Public form POST)
 │   │   ├── whatsapp.routes.js     # /api/webhook/whatsapp routes
 │   │   └── instagram.routes.js    # /api/webhook/instagram routes
 │   ├── validators/
@@ -72,13 +78,14 @@ car-detailing-crm-backend/
 │   ├── utils/
 │   │   ├── apiError.js            # Custom ApiError operational error class
 │   │   ├── apiResponse.js         # Standardized JSON response formatting
-│   │   └── asyncHandler.js        # Async wrapper for controllers
+│   │   ├── asyncHandler.js        # Async wrapper for controllers
+│   │   └── session.js             # HMAC-SHA256 session token generator & cookie parser
 │   ├── app.js                     # Express application initialization & middleware
 │   └── server.js                  # Local development HTTP server listener
 ├── supabase/
 │   └── schema.sql                 # SQL script for tables, indexes, triggers, & RLS
 ├── tests/
-│   └── api.test.js                # Integration & unit test suite (25 tests)
+│   └── api.test.js                # Integration & unit test suite (40 tests)
 ├── .env.example                   # Environment variables example template
 ├── .gitignore                     # Git ignore rules
 ├── package.json                   # Node.js dependencies & scripts
@@ -1098,6 +1105,43 @@ A complete, production-ready dark-mode CRM dashboard is built and served directl
 4. **Manual Lead Entry ("Add Lead" Modal)**: Add walk-in, phone-in, or referral leads with instant validation and database sync.
 5. **Export to CSV**: Download filtered leads into a `.csv` file with a single click.
 6. **Zero Separate Setup**: Embedded directly in the backend repository under `public/`, fully responsive for mobile, tablet, and desktop.
+
+---
+
+## 🔐 Dashboard Authentication & Security
+
+The CRM Dashboard and administrative API routes are protected by a cryptographically signed HMAC-SHA256 session authentication system using standard Node.js libraries (zero external npm bloat, zero serverless overhead).
+
+* **Login Page**: [`https://car-detailing-crm-backend.vercel.app/login`](https://car-detailing-crm-backend.vercel.app/login)
+* **Default Credentials**:
+  * **Username**: `admin`
+  * **Password**: `SignatureCRM@2026!`
+* **Session Persistence**: Sets an `HttpOnly`, `Secure`, `SameSite=Lax` cookie (`crm_session`) valid for **30 days**.
+* **Protected Routes**:
+  * `GET /dashboard` (Redirects to `/login` if not authenticated)
+  * `GET /api/leads` (Returns `401 Unauthorized` without session)
+  * `GET /api/leads/:id`
+  * `PATCH /api/leads/:id/status`
+  * `DELETE /api/leads/:id`
+* **Public Form Submissions**:
+  * `POST /api/leads` **remains 100% public** so your Framer website forms and third-party webhooks can submit leads without authentication.
+
+### Customizing Admin Credentials in Vercel:
+In your [Vercel Project Settings > Environment Variables](https://vercel.com/):
+- `ADMIN_USERNAME`: Your custom administrator username
+- `ADMIN_PASSWORD`: Your custom strong password
+- `SESSION_SECRET`: A custom random string for signing HMAC-SHA256 session tokens
+
+---
+
+## ⚡ Supabase Database Keep-Alive (Vercel Cron)
+
+Supabase Free Tier projects automatically pause after 7 days of inactivity. To prevent this, an automated Vercel Cron Job runs daily to ping the database with zero network egress.
+
+* **Endpoint**: `GET /api/keepalive`
+* **Schedule**: Daily at 04:00 UTC (`0 4 * * *` in `vercel.json`)
+* **Zero-Egress Query**: Executes `supabase.from('leads').select('*', { count: 'exact', head: true })`, fetching 0 rows of data while keeping the database active and warm.
+* **Logs**: Records response latency and timestamp in Vercel runtime logs.
 
 ---
 
