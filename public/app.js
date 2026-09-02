@@ -7,7 +7,7 @@ const state = {
   leads: [],
   filteredLeads: [],
   loading: false,
-  viewMode: 'table', // 'table' | 'kanban'
+  viewMode: 'table', // 'table' | 'kanban' | 'inbox'
   searchQuery: '',
   filters: {
     status: '',
@@ -21,6 +21,14 @@ const state = {
     totalItems: 0,
   },
   deletingLeadId: null,
+  inbox: {
+    conversations: [],
+    activePhone: null,
+    activeCustomerName: '',
+    messages: [],
+    loading: false,
+    searchQuery: '',
+  },
 };
 
 // DOM Elements
@@ -45,14 +53,35 @@ const elements = {
   // Views
   viewToggleTable: document.getElementById('view-toggle-table'),
   viewToggleKanban: document.getElementById('view-toggle-kanban'),
+  viewToggleInbox: document.getElementById('view-toggle-inbox'),
   tableViewContainer: document.getElementById('table-view-container'),
   kanbanViewContainer: document.getElementById('kanban-view-container'),
+  inboxViewContainer: document.getElementById('inbox-view-container'),
   leadsTableBody: document.getElementById('leads-table-body'),
   leadsMobileList: document.getElementById('leads-mobile-list'),
   paginationInfo: document.getElementById('table-pagination-info'),
   currentPageLabel: document.getElementById('pagination-current-page'),
   btnPrevPage: document.getElementById('btn-prev-page'),
   btnNextPage: document.getElementById('btn-next-page'),
+
+  // WhatsApp Inbox Elements
+  inboxSidebar: document.getElementById('inbox-sidebar'),
+  inboxChatPane: document.getElementById('inbox-chat-pane'),
+  inboxConversationList: document.getElementById('inbox-conversation-list'),
+  inboxSearchInput: document.getElementById('inbox-search-input'),
+  btnRefreshInbox: document.getElementById('btn-refresh-inbox'),
+  btnInboxBack: document.getElementById('btn-inbox-back'),
+  inboxHeaderAvatar: document.getElementById('inbox-header-avatar'),
+  inboxHeaderName: document.getElementById('inbox-header-name'),
+  inboxHeaderPhone: document.getElementById('inbox-header-phone'),
+  inboxHeaderActions: document.getElementById('inbox-header-actions'),
+  btnInboxOpenWa: document.getElementById('btn-inbox-open-wa'),
+  inboxMessagesContainer: document.getElementById('inbox-messages-container'),
+  inboxQuickTemplates: document.getElementById('inbox-quick-templates'),
+  inboxComposerBar: document.getElementById('inbox-composer-bar'),
+  formInboxSend: document.getElementById('form-inbox-send'),
+  inboxInputMessage: document.getElementById('inbox-input-message'),
+  btnInboxSend: document.getElementById('btn-inbox-send'),
 
   // Kanban Columns
   kanbanCols: {
@@ -138,6 +167,35 @@ function setupEventListeners() {
   // View Switcher
   elements.viewToggleTable.addEventListener('click', () => switchView('table'));
   elements.viewToggleKanban.addEventListener('click', () => switchView('kanban'));
+  if (elements.viewToggleInbox) {
+    elements.viewToggleInbox.addEventListener('click', () => switchView('inbox'));
+  }
+
+  // Inbox Event Listeners
+  if (elements.btnRefreshInbox) {
+    elements.btnRefreshInbox.addEventListener('click', () => fetchConversations());
+  }
+  if (elements.inboxSearchInput) {
+    elements.inboxSearchInput.addEventListener('input', (e) => {
+      state.inbox.searchQuery = e.target.value.toLowerCase().trim();
+      renderConversationsList();
+    });
+  }
+  if (elements.formInboxSend) {
+    elements.formInboxSend.addEventListener('submit', handleInboxSend);
+  }
+  if (elements.btnInboxBack) {
+    elements.btnInboxBack.addEventListener('click', handleInboxBack);
+  }
+  if (elements.inboxQuickTemplates) {
+    elements.inboxQuickTemplates.addEventListener('click', (e) => {
+      const btn = e.target.closest('.quick-reply-btn');
+      if (btn && btn.dataset.reply && elements.inboxInputMessage) {
+        elements.inboxInputMessage.value = btn.dataset.reply;
+        elements.inboxInputMessage.focus();
+      }
+    });
+  }
 
   // Pagination
   elements.btnPrevPage.addEventListener('click', () => {
@@ -257,25 +315,37 @@ function applyFilters() {
   }
 }
 
-// Switch between Table and Kanban Views
+// Switch between Table, Kanban, and WhatsApp Inbox Views
 function switchView(mode) {
   state.viewMode = mode;
+
+  if (elements.tableViewContainer) elements.tableViewContainer.classList.toggle('hidden', mode !== 'table');
+  if (elements.kanbanViewContainer) elements.kanbanViewContainer.classList.toggle('hidden', mode !== 'kanban');
+  if (elements.inboxViewContainer) elements.inboxViewContainer.classList.toggle('hidden', mode !== 'inbox');
+
+  const toggles = [
+    { el: elements.viewToggleTable, active: mode === 'table' },
+    { el: elements.viewToggleKanban, active: mode === 'kanban' },
+    { el: elements.viewToggleInbox, active: mode === 'inbox' },
+  ];
+
+  toggles.forEach(({ el, active }) => {
+    if (!el) return;
+    if (active) {
+      el.classList.add('bg-zinc-800', 'text-white', 'shadow');
+      el.classList.remove('text-zinc-400');
+    } else {
+      el.classList.remove('bg-zinc-800', 'text-white', 'shadow');
+      el.classList.add('text-zinc-400');
+    }
+  });
+
   if (mode === 'table') {
-    elements.tableViewContainer.classList.remove('hidden');
-    elements.kanbanViewContainer.classList.add('hidden');
-    elements.viewToggleTable.classList.add('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleTable.classList.remove('text-zinc-400');
-    elements.viewToggleKanban.classList.remove('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleKanban.classList.add('text-zinc-400');
     renderTable();
-  } else {
-    elements.tableViewContainer.classList.add('hidden');
-    elements.kanbanViewContainer.classList.remove('hidden');
-    elements.viewToggleKanban.classList.add('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleKanban.classList.remove('text-zinc-400');
-    elements.viewToggleTable.classList.remove('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleTable.classList.add('text-zinc-400');
+  } else if (mode === 'kanban') {
     renderKanban();
+  } else if (mode === 'inbox') {
+    fetchConversations(true);
   }
 }
 
@@ -373,6 +443,14 @@ function renderTable() {
 
           <td class="py-3 px-4 text-right">
             <div class="flex items-center justify-end space-x-1.5">
+              <button 
+                onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" 
+                title="Open in CRM WhatsApp Inbox"
+                class="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-green-400 border border-zinc-700/60 transition"
+              >
+                <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+              </button>
+
               <a 
                 href="${waUrl}" 
                 target="_blank" 
@@ -549,6 +627,9 @@ function renderKanban() {
                 <span>${formatTimeAgo(lead.created_at)}</span>
 
                 <div class="flex items-center space-x-1.5">
+                  <button onclick="openInboxChat('${cleanPhone}', '${escapeHtml(lead.name)}')" class="p-1 rounded bg-zinc-800 text-zinc-300 hover:text-green-400 hover:bg-zinc-700 border border-zinc-700" title="Open in CRM Inbox">
+                    <i data-lucide="message-square" class="w-3 h-3"></i>
+                  </button>
                   <a href="${waUrl}" target="_blank" class="p-1 rounded bg-green-950 text-green-400 hover:bg-green-900 border border-green-800/40" title="WhatsApp">
                     <i data-lucide="message-circle" class="w-3 h-3"></i>
                   </a>
@@ -807,3 +888,338 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+/* ==========================================================================
+   WhatsApp Live Inbox Module
+   ========================================================================== */
+
+/**
+ * Fetch list of active WhatsApp conversations
+ */
+async function fetchConversations(autoSelectFirst = false) {
+  if (!elements.inboxConversationList) return;
+  state.inbox.loading = true;
+
+  try {
+    const res = await fetch('/api/inbox/whatsapp/conversations');
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load conversations');
+
+    state.inbox.conversations = json.data || [];
+    renderConversationsList();
+
+    // Auto-select first conversation if none active or requested
+    if (autoSelectFirst && state.inbox.conversations.length > 0 && !state.inbox.activePhone) {
+      const first = state.inbox.conversations[0];
+      loadChatThread(first.phone, first.customer_name);
+    }
+  } catch (err) {
+    console.error('[Inbox Error]', err);
+    showToast(err.message, 'error');
+  } finally {
+    state.inbox.loading = false;
+  }
+}
+
+/**
+ * Filter and render conversation previews in the left sidebar
+ */
+function renderConversationsList() {
+  if (!elements.inboxConversationList) return;
+
+  const query = state.inbox.searchQuery;
+  const filtered = state.inbox.conversations.filter((c) => {
+    if (!query) return true;
+    return (
+      c.customer_name.toLowerCase().includes(query) ||
+      c.phone.toLowerCase().includes(query) ||
+      (c.last_message && c.last_message.toLowerCase().includes(query))
+    );
+  });
+
+  if (filtered.length === 0) {
+    elements.inboxConversationList.innerHTML = `
+      <div class="p-6 text-center text-zinc-500 text-xs">
+        <i data-lucide="message-square-off" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+        <p class="font-medium text-zinc-400">No conversations found</p>
+        <p class="text-[11px] text-zinc-600 mt-1">When customers message on WhatsApp, their threads appear here.</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  elements.inboxConversationList.innerHTML = filtered
+    .map((conv) => {
+      const isActive = state.inbox.activePhone === conv.phone;
+      const activeClass = isActive
+        ? 'bg-zinc-800/90 border-l-4 border-l-green-500'
+        : 'hover:bg-zinc-900/60 border-l-4 border-l-transparent';
+      
+      const initials = (conv.customer_name || 'C')
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+      const senderTag =
+        conv.last_sender === 'customer'
+          ? ''
+          : conv.last_sender === 'bot'
+          ? '<span class="text-sky-400 text-[10px] mr-1">🤖 Bot:</span>'
+          : '<span class="text-green-400 text-[10px] mr-1">You:</span>';
+
+      return `
+        <div 
+          onclick="loadChatThread('${escapeHtml(conv.phone)}', '${escapeHtml(conv.customer_name)}')"
+          class="p-3.5 cursor-pointer transition flex items-start space-x-3 ${activeClass}"
+        >
+          <div class="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/80 text-zinc-200 font-bold flex items-center justify-center text-xs shrink-0">
+            ${escapeHtml(initials)}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+              <h5 class="text-xs font-bold text-white truncate">${escapeHtml(conv.customer_name)}</h5>
+              <span class="text-[10px] text-zinc-500 shrink-0 ml-1">${formatTimeAgo(conv.last_message_at)}</span>
+            </div>
+            <p class="text-[11px] text-zinc-400 font-mono mt-0.5">${escapeHtml(conv.phone)}</p>
+            <p class="text-xs text-zinc-400 truncate mt-1">
+              ${senderTag}${escapeHtml(conv.last_message || '')}
+            </p>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  lucide.createIcons();
+}
+
+/**
+ * Load and display full message thread for a selected customer
+ */
+async function loadChatThread(phone, customerName) {
+  state.inbox.activePhone = phone;
+  state.inbox.activeCustomerName = customerName || 'Customer';
+
+  // Update header details
+  if (elements.inboxHeaderName) elements.inboxHeaderName.textContent = customerName || 'Customer';
+  if (elements.inboxHeaderPhone) elements.inboxHeaderPhone.textContent = `+${phone.replace(/[^0-9]/g, '')}`;
+
+  const initials = (customerName || 'C')
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  if (elements.inboxHeaderAvatar) elements.inboxHeaderAvatar.textContent = initials;
+
+  // Set direct WhatsApp Web fallback link
+  if (elements.btnInboxOpenWa) {
+    elements.btnInboxOpenWa.href = `https://wa.me/${phone.replace(/[^0-9]/g, '')}`;
+  }
+
+  // Unhide actions and composer
+  if (elements.inboxHeaderActions) elements.inboxHeaderActions.classList.remove('hidden');
+  if (elements.inboxQuickTemplates) elements.inboxQuickTemplates.classList.remove('hidden');
+  if (elements.inboxComposerBar) elements.inboxComposerBar.classList.remove('hidden');
+
+  // Mobile layout switch: Hide sidebar, show chat pane
+  if (window.innerWidth < 768) {
+    if (elements.inboxSidebar) elements.inboxSidebar.classList.add('hidden');
+    if (elements.inboxChatPane) elements.inboxChatPane.classList.remove('hidden');
+  }
+
+  renderConversationsList();
+
+  // Show loading indicator in message container
+  if (elements.inboxMessagesContainer) {
+    elements.inboxMessagesContainer.innerHTML = `
+      <div class="h-full flex items-center justify-center text-zinc-500 text-xs">
+        <i data-lucide="loader-2" class="w-5 h-5 animate-spin mr-2 text-green-400"></i>
+        <span>Loading messages...</span>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  try {
+    const res = await fetch(`/api/inbox/whatsapp/messages/${encodeURIComponent(phone)}`);
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load message thread');
+
+    state.inbox.messages = json.data || [];
+    renderMessageThread();
+  } catch (err) {
+    console.error('[Load Thread Error]', err);
+    showToast(err.message, 'error');
+  }
+}
+
+/**
+ * Render message bubbles inside chat pane
+ */
+function renderMessageThread() {
+  if (!elements.inboxMessagesContainer) return;
+
+  if (state.inbox.messages.length === 0) {
+    elements.inboxMessagesContainer.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500">
+        <i data-lucide="message-square" class="w-8 h-8 mb-2 opacity-40"></i>
+        <p class="text-xs">No recorded messages in this thread yet.</p>
+        <p class="text-[11px] text-zinc-600 mt-1">Send a message below to reach out on WhatsApp.</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  elements.inboxMessagesContainer.innerHTML = state.inbox.messages
+    .map((msg) => {
+      const isCustomer = msg.direction === 'inbound';
+      const isBot = msg.sender === 'bot';
+      const timeStr = formatMessageClock(msg.created_at);
+
+      if (isCustomer) {
+        return `
+          <div class="flex flex-col items-start max-w-[85%] sm:max-w-[75%] animate-fade-in">
+            <div class="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-zinc-800 text-zinc-100 text-xs sm:text-sm border border-zinc-700/60 shadow-sm leading-relaxed whitespace-pre-wrap">
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 mt-1 ml-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      } else if (isBot) {
+        return `
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[75%] animate-fade-in">
+            <div class="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-zinc-900 text-zinc-300 text-xs sm:text-sm border border-zinc-800 shadow-sm leading-relaxed whitespace-pre-wrap">
+              <div class="flex items-center space-x-1 text-[10px] text-sky-400 font-semibold mb-1">
+                <i data-lucide="bot" class="w-3 h-3"></i>
+                <span>Automated Bot</span>
+              </div>
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      } else {
+        // Agent (Manual reply)
+        return `
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[75%] animate-fade-in">
+            <div class="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs sm:text-sm shadow-md shadow-green-600/20 leading-relaxed whitespace-pre-wrap">
+              <div class="flex items-center space-x-1 text-[10px] text-green-200 font-semibold mb-1">
+                <i data-lucide="user-check" class="w-3 h-3"></i>
+                <span>You (Agent)</span>
+              </div>
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      }
+    })
+    .join('');
+
+  lucide.createIcons();
+
+  // Scroll to bottom
+  elements.inboxMessagesContainer.scrollTop = elements.inboxMessagesContainer.scrollHeight;
+}
+
+/**
+ * Handle sending outbound WhatsApp message from composer
+ */
+async function handleInboxSend(e) {
+  e.preventDefault();
+  if (!state.inbox.activePhone || !elements.inboxInputMessage) return;
+
+  const text = elements.inboxInputMessage.value.trim();
+  if (!text) return;
+
+  const phone = state.inbox.activePhone;
+  const customerName = state.inbox.activeCustomerName;
+
+  // Optimistic UI update
+  const tempMessage = {
+    phone,
+    customer_name: customerName,
+    direction: 'outbound',
+    sender: 'agent',
+    message_text: text,
+    created_at: new Date().toISOString(),
+  };
+
+  state.inbox.messages.push(tempMessage);
+  renderMessageThread();
+
+  elements.inboxInputMessage.value = '';
+  if (elements.btnInboxSend) elements.btnInboxSend.disabled = true;
+
+  try {
+    const res = await fetch('/api/inbox/whatsapp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        customerName,
+        message: text,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to send WhatsApp message');
+
+    showToast('WhatsApp message sent!', 'success');
+    // Refresh conversations list in background to update latest snippet
+    fetchConversations();
+  } catch (err) {
+    console.error('[Send Message Error]', err);
+    showToast(err.message, 'error');
+  } finally {
+    if (elements.btnInboxSend) elements.btnInboxSend.disabled = false;
+  }
+}
+
+/**
+ * Mobile back button in chat header
+ */
+function handleInboxBack() {
+  if (elements.inboxSidebar) elements.inboxSidebar.classList.remove('hidden');
+  if (elements.inboxChatPane) elements.inboxChatPane.classList.add('hidden');
+}
+
+/**
+ * Helper to jump directly from Lead Table or Kanban into WhatsApp Inbox
+ */
+function openInboxChat(phone, customerName) {
+  switchView('inbox');
+  loadChatThread(phone, customerName);
+}
+
+// Format message clock (e.g. "10:45 AM")
+function formatMessageClock(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Expose openInboxChat and loadChatThread globally for inline onclick attributes
+window.openInboxChat = openInboxChat;
+window.loadChatThread = loadChatThread;
+

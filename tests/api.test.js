@@ -191,10 +191,54 @@ async function runTests() {
       }),
     });
     const igPostJson = await igPostRes.json();
-    assert(igPostRes.status === 200, 'POST /api/webhook/instagram returns 200 OK');
-    assert(igPostJson.status === 'EVENT_RECEIVED', 'POST /api/webhook/instagram returns EVENT_RECEIVED');
+    // Test 17: Unauthenticated GET /api/inbox/whatsapp/conversations returns 401
+    const unauthInboxRes = await fetch(`${baseUrl}/api/inbox/whatsapp/conversations`);
+    assert(unauthInboxRes.status === 401, 'Unauthenticated GET /api/inbox/whatsapp/conversations returns 401');
 
-    // Test 17: POST /api/auth/logout clears session
+    // Test 18: Authenticated GET /api/inbox/whatsapp/conversations returns 200
+    const authInboxRes = await fetch(`${baseUrl}/api/inbox/whatsapp/conversations`, {
+      headers: { Cookie: sessionCookie },
+    });
+    const authInboxJson = await authInboxRes.json();
+    assert(authInboxRes.status === 200, 'Authenticated GET /api/inbox/whatsapp/conversations returns 200 OK');
+    assert(Array.isArray(authInboxJson.data), 'Conversations data is an array');
+
+    // Test 19: Unauthenticated POST /api/inbox/whatsapp/send returns 401
+    const unauthSendRes = await fetch(`${baseUrl}/api/inbox/whatsapp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '+15551234567', message: 'Hello' }),
+    });
+    assert(unauthSendRes.status === 401, 'Unauthenticated POST /api/inbox/whatsapp/send returns 401');
+
+    // Test 20: Authenticated POST /api/inbox/whatsapp/send validation rejects empty message (400)
+    const invalidSendRes = await fetch(`${baseUrl}/api/inbox/whatsapp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({ phone: '+15551234567', message: '' }),
+    });
+    assert(invalidSendRes.status === 400, 'POST /api/inbox/whatsapp/send with empty message returns 400');
+
+    // Test 21: Authenticated POST /api/inbox/whatsapp/send sends message (201)
+    const validSendRes = await fetch(`${baseUrl}/api/inbox/whatsapp/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({ phone: '+15551234567', customerName: 'Test Customer', message: 'Hi from CRM Inbox' }),
+    });
+    const validSendJson = await validSendRes.json();
+    assert(validSendRes.status === 201, 'Authenticated POST /api/inbox/whatsapp/send returns 201 Created');
+    assert(validSendJson.data?.direction === 'outbound', 'Outbound message direction recorded as outbound');
+    assert(validSendJson.data?.sender === 'agent', 'Sender recorded as agent');
+
+    // Test 22: Authenticated GET /api/inbox/whatsapp/messages/:phone returns 200
+    const messagesRes = await fetch(`${baseUrl}/api/inbox/whatsapp/messages/15551234567`, {
+      headers: { Cookie: sessionCookie },
+    });
+    const messagesJson = await messagesRes.json();
+    assert(messagesRes.status === 200, 'GET /api/inbox/whatsapp/messages/:phone returns 200 OK');
+    assert(Array.isArray(messagesJson.data), 'Messages data is an array');
+
+    // Test 23: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

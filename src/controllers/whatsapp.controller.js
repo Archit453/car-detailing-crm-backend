@@ -35,13 +35,13 @@ Reply with 1, 2, 3, or 4 (or type the service name).`;
 /**
  * Sends outbound WhatsApp message via Meta Cloud API
  */
-async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
+export async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
   const token = config.whatsapp.token;
   const targetPhoneId = phoneNumberId || config.whatsapp.phoneNumberId;
 
   if (!token || !targetPhoneId) {
     console.log(`[Meta WhatsApp (Simulated)] -> ${to}:\n${text}`);
-    return;
+    return { simulated: true };
   }
 
   try {
@@ -64,11 +64,35 @@ async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[Meta WhatsApp API Error]', data);
+      throw new Error(data.error?.message || 'Meta WhatsApp API error');
     } else {
       console.log(`[Meta WhatsApp Message Sent] to ${to}`);
+      return data;
     }
   } catch (err) {
     console.error('[Meta WhatsApp Network Error]', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Logs a message into the whatsapp_messages table for CRM Live Inbox
+ */
+export async function logWhatsAppMessage(phone, customerName, direction, sender, messageText) {
+  if (!isConfigured) return;
+  try {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    await supabase.from('whatsapp_messages').insert([
+      {
+        phone: cleanPhone,
+        customer_name: customerName || 'Customer',
+        direction,
+        sender,
+        message_text: messageText,
+      },
+    ]);
+  } catch (err) {
+    console.warn('[WhatsApp Message Log Warning]', err.message);
   }
 }
 
@@ -107,6 +131,15 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
   if (!fromNumber || !incomingText) {
     return res.status(200).json({ status: 'no_message_content' });
   }
+
+  // Log inbound customer message to Live Inbox
+  await logWhatsAppMessage(
+    fromNumber,
+    profileName || 'WhatsApp Customer',
+    'inbound',
+    'customer',
+    incomingText
+  );
 
   // Fetch current session for this sender phone
   const { data: session } = await supabase
@@ -179,6 +212,17 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
       .eq('phone', fromNumber);
 
     replyText = `Thank you, ${customerName}! 🎉\n\nWe have received your request for *${chosenService}*. Our detailing specialist will reach out to you shortly on this number.`;
+  }
+
+  // Log bot response to Live Inbox
+  if (replyText) {
+    await logWhatsAppMessage(
+      fromNumber,
+      profileName || 'WhatsApp Customer',
+      'outbound',
+      'bot',
+      replyText
+    );
   }
 
   // If Meta Cloud API, send message via Meta Graph API

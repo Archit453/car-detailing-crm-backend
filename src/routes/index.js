@@ -4,6 +4,7 @@ import whatsappRoutes from './whatsapp.routes.js';
 import instagramRoutes from './instagram.routes.js';
 import authRoutes from './auth.routes.js';
 import keepaliveRoutes from './keepalive.routes.js';
+import inboxRoutes from './inbox.routes.js';
 import { successResponse } from '../utils/apiResponse.js';
 
 const apiRouter = Router();
@@ -13,6 +14,9 @@ apiRouter.use('/auth', authRoutes);
 
 // Database keepalive sub-router (Vercel Cron & Health monitoring)
 apiRouter.use('/keepalive', keepaliveRoutes);
+
+// WhatsApp Live Inbox sub-router (Protected)
+apiRouter.use('/inbox', inboxRoutes);
 
 // Leads sub-router
 apiRouter.use('/leads', leadRoutes);
@@ -35,6 +39,9 @@ apiRouter.get('/', (req, res) => {
         keepalive: 'GET /api/keepalive',
         login: 'POST /api/auth/login',
         logout: 'POST /api/auth/logout',
+        inboxConversations: 'GET /api/inbox/whatsapp/conversations (Protected)',
+        inboxMessages: 'GET /api/inbox/whatsapp/messages/:phone (Protected)',
+        inboxSend: 'POST /api/inbox/whatsapp/send (Protected)',
         createLead: 'POST /api/leads (Public)',
         listLeads: 'GET /api/leads (Protected)',
         getLeadById: 'GET /api/leads/:id (Protected)',

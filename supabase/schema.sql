@@ -92,7 +92,31 @@ CREATE POLICY "Allow public full access to whatsapp_sessions"
     USING (true)
     WITH CHECK (true);
 
--- 7. Sample Seed Data (Optional for testing)
+-- 7. WhatsApp Messages Table (CRM Live Inbox & History)
+CREATE TABLE IF NOT EXISTS public.whatsapp_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone VARCHAR(50) NOT NULL,
+    customer_name VARCHAR(255),
+    direction VARCHAR(20) NOT NULL CHECK (direction IN ('inbound', 'outbound')),
+    sender VARCHAR(50) NOT NULL DEFAULT 'customer', -- 'customer', 'bot', 'agent'
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE public.whatsapp_messages IS 'Stores full WhatsApp message history for CRM Live Inbox';
+
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_phone ON public.whatsapp_messages(phone, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_created_at ON public.whatsapp_messages(created_at DESC);
+
+ALTER TABLE public.whatsapp_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public full access to whatsapp_messages"
+    ON public.whatsapp_messages
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 8. Sample Seed Data (Optional for testing)
 -- INSERT INTO public.leads (name, phone, service, source, status) VALUES
 -- ('John Smith', '+1-555-0199', 'Full Detail', 'website', 'new'),
 -- ('Sarah Connor', '+1-555-0144', 'Ceramic Coating', 'instagram', 'contacted'),
