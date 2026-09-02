@@ -114,20 +114,11 @@
         </button>
       </div>
 
-      <div class="flex items-center space-x-2 text-xs pr-1">
-        <button 
-          id="btn-open-coexistence-modal" 
-          title="Connect your WhatsApp Business Phone App directly for free"
-          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 text-emerald-400 border border-emerald-700/70 text-xs font-bold transition shadow-sm active:scale-95 cursor-pointer"
-        >
-          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-          <span>Link Phone (Coexistence)</span>
-        </button>
-
-        <div class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-emerald-900/50 shadow-inner" title="Option 2: WhatsApp Business Phone App + Cloud API running simultaneously">
+      <div class="hidden sm:flex items-center space-x-2 text-xs text-zinc-400 pr-2">
+        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-emerald-900/50 shadow-inner" title="WhatsApp Business: Active & Connected">
           <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
-          <span class="text-zinc-200 font-medium">WhatsApp Coexistence</span>
-          <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800/60">Phone + API</span>
+          <span class="text-zinc-200 font-medium">WhatsApp Cloud</span>
+          <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800/60">Connected</span>
         </div>
       </div>
     </nav>
@@ -626,65 +617,6 @@
       <div class="flex items-center justify-center space-x-3 pt-2">
         <button id="btn-cancel-delete" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">Cancel</button>
         <button id="btn-confirm-delete" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-600/30 transition active:scale-95">Delete</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- WhatsApp Coexistence (Option 2) Meta Embedded Signup Modal -->
-  <div id="modal-coexistence" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
-    <div class="glass-card max-w-lg w-full rounded-2xl border border-emerald-700/60 p-5 sm:p-6 space-y-4 shadow-2xl animate-fade-in relative bg-zinc-950/95">
-      <button id="btn-close-coexistence-modal" class="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition">
-        <i data-lucide="x" class="w-4 h-4"></i>
-      </button>
-
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold shrink-0">
-          <i data-lucide="smartphone" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <h3 class="text-base font-bold text-white font-display">WhatsApp Coexistence Setup</h3>
-          <p class="text-xs text-zinc-400">Keep your physical phone app & CRM bot running simultaneously</p>
-        </div>
-      </div>
-
-      <div class="space-y-2 bg-zinc-900/80 p-3 rounded-xl border border-zinc-800 text-xs text-zinc-300 leading-relaxed">
-        <div class="flex items-start space-x-2">
-          <span class="text-emerald-400 font-bold">✔</span>
-          <span><strong>100% Free:</strong> Built directly with your Meta Developer App (zero monthly third-party fees).</span>
-        </div>
-        <div class="flex items-start space-x-2">
-          <span class="text-emerald-400 font-bold">✔</span>
-          <span><strong>Phone Stays Logged In:</strong> Your mobile WhatsApp Business app handles personal chats, calling & voice notes.</span>
-        </div>
-        <div class="flex items-start space-x-2">
-          <span class="text-emerald-400 font-bold">✔</span>
-          <span><strong>CRM Automation:</strong> Inquiries are qualified automatically and mirrored to your phone.</span>
-        </div>
-      </div>
-
-      <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-1 text-[11px] font-mono text-zinc-400">
-        <p><span class="text-zinc-500">Meta App ID:</span> <strong class="text-zinc-200">1086490643745739</strong></p>
-        <p><span class="text-zinc-500">Configuration ID:</span> <strong class="text-emerald-400">2499074500567851</strong></p>
-      </div>
-
-      <div id="coexistence-status-banner" class="hidden p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-xs text-emerald-300 flex items-center space-x-2">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-        <span id="coexistence-status-text">WhatsApp Coexistence connected successfully!</span>
-      </div>
-
-      <div class="pt-1 flex flex-col space-y-2">
-        <button 
-          id="btn-launch-meta-signup" 
-          type="button"
-          class="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/50 transition active:scale-95 cursor-pointer"
-        >
-          <i data-lucide="external-link" class="w-4 h-4"></i>
-          <span>Launch Meta Embedded Signup Popup</span>
-        </button>
-
-        <p class="text-[10px] text-zinc-500 text-center">
-          Opens official Meta Facebook Login for Business dialog.
-        </p>
       </div>
     </div>
   </div>
