@@ -7,7 +7,6 @@ const state = {
   leads: [],
   filteredLeads: [],
   loading: false,
-  viewMode: 'table', // 'table' | 'kanban'
   viewMode: 'table', // 'table' | 'kanban' | 'inbox'
   searchQuery: '',
   filters: {
@@ -77,6 +76,14 @@ const elements = {
   inboxHeaderPhone: document.getElementById('inbox-header-phone'),
   inboxHeaderActions: document.getElementById('inbox-header-actions'),
   btnInboxOpenWa: document.getElementById('btn-inbox-open-wa'),
+  inboxBotBadge: document.getElementById('inbox-bot-badge'),
+  inboxBotBadgeText: document.getElementById('inbox-bot-badge-text'),
+  inboxBotDot: document.getElementById('inbox-bot-dot'),
+  btnToggleBot: document.getElementById('btn-toggle-bot'),
+  btnToggleBotText: document.getElementById('btn-toggle-bot-text'),
+  iconToggleBot: document.getElementById('icon-toggle-bot'),
+  inboxHumanBanner: document.getElementById('inbox-human-banner'),
+  btnResumeBotBanner: document.getElementById('btn-resume-bot-banner'),
   inboxMessagesContainer: document.getElementById('inbox-messages-container'),
   inboxQuickTemplates: document.getElementById('inbox-quick-templates'),
   inboxComposerBar: document.getElementById('inbox-composer-bar'),
@@ -197,6 +204,12 @@ function setupEventListeners() {
       }
     });
   }
+  if (elements.btnToggleBot) {
+    elements.btnToggleBot.addEventListener('click', () => handleToggleBot());
+  }
+  if (elements.btnResumeBotBanner) {
+    elements.btnResumeBotBanner.addEventListener('click', () => handleToggleBot(true));
+  }
 
   // Pagination
   elements.btnPrevPage.addEventListener('click', () => {
@@ -316,7 +329,6 @@ function applyFilters() {
   }
 }
 
-// Switch between Table and Kanban Views
 // Switch between Table, Kanban, and WhatsApp Inbox Views
 function switchView(mode) {
   state.viewMode = mode;
@@ -343,20 +355,7 @@ function switchView(mode) {
   });
 
   if (mode === 'table') {
-    elements.tableViewContainer.classList.remove('hidden');
-    elements.kanbanViewContainer.classList.add('hidden');
-    elements.viewToggleTable.classList.add('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleTable.classList.remove('text-zinc-400');
-    elements.viewToggleKanban.classList.remove('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleKanban.classList.add('text-zinc-400');
     renderTable();
-  } else {
-    elements.tableViewContainer.classList.add('hidden');
-    elements.kanbanViewContainer.classList.remove('hidden');
-    elements.viewToggleKanban.classList.add('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleKanban.classList.remove('text-zinc-400');
-    elements.viewToggleTable.classList.remove('bg-zinc-800', 'text-white', 'shadow');
-    elements.viewToggleTable.classList.add('text-zinc-400');
   } else if (mode === 'kanban') {
     renderKanban();
   } else if (mode === 'inbox') {
@@ -1076,9 +1075,96 @@ async function loadChatThread(phone, customerName) {
 
     state.inbox.messages = json.data || [];
     renderMessageThread();
+
+    // Check Bot Paused status from backend meta
+    const isBotPaused = Boolean(json.meta?.botPaused);
+    updateBotStatusUI(isBotPaused);
   } catch (err) {
     console.error('[Load Thread Error]', err);
     showToast(err.message, 'error');
+  }
+}
+
+/**
+ * Update Bot Status badge, toggle button, and human mode banner
+ */
+function updateBotStatusUI(isPaused) {
+  state.inbox.botPaused = Boolean(isPaused);
+
+  if (elements.inboxBotBadge && elements.inboxBotBadgeText && elements.inboxBotDot) {
+    if (isPaused) {
+      elements.inboxBotBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-400 border border-amber-800/60 flex items-center space-x-1';
+      elements.inboxBotDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+      elements.inboxBotBadgeText.textContent = 'Bot Paused';
+    } else {
+      elements.inboxBotBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-950/80 text-green-400 border border-green-800/60 flex items-center space-x-1';
+      elements.inboxBotDot.className = 'w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse';
+      elements.inboxBotBadgeText.textContent = 'Bot Active';
+    }
+  }
+
+  if (elements.btnToggleBot && elements.btnToggleBotText) {
+    if (isPaused) {
+      elements.btnToggleBotText.textContent = 'Resume Bot';
+      if (elements.iconToggleBot) {
+        elements.iconToggleBot.setAttribute('data-lucide', 'play-circle');
+        elements.iconToggleBot.className = 'w-3.5 h-3.5 text-green-400';
+      }
+    } else {
+      elements.btnToggleBotText.textContent = 'Pause Bot';
+      if (elements.iconToggleBot) {
+        elements.iconToggleBot.setAttribute('data-lucide', 'pause-circle');
+        elements.iconToggleBot.className = 'w-3.5 h-3.5 text-amber-400';
+      }
+    }
+    lucide.createIcons();
+  }
+
+  if (elements.inboxHumanBanner) {
+    elements.inboxHumanBanner.classList.toggle('hidden', !isPaused);
+  }
+}
+
+/**
+ * Toggle Bot Active / Paused state for current active conversation
+ */
+async function handleToggleBot(forceActive = null) {
+  if (!state.inbox.activePhone) return;
+
+  const currentPaused = state.inbox.botPaused;
+  const targetActive = forceActive !== null ? forceActive : currentPaused; // If paused, target is active (true)
+
+  // Optimistic UI update
+  updateBotStatusUI(!targetActive);
+
+  try {
+    const res = await fetch('/api/inbox/whatsapp/bot-toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: state.inbox.activePhone,
+        botActive: targetActive,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to toggle bot status');
+
+    if (targetActive) {
+      showToast('Bot resumed! Automated replies active.', 'success');
+    } else {
+      showToast('Bot paused! Human Takeover active.', 'info');
+    }
+  } catch (err) {
+    console.error('[Bot Toggle Error]', err);
+    showToast(err.message, 'error');
+    // Revert UI on error
+    updateBotStatusUI(currentPaused);
   }
 }
 
@@ -1177,6 +1263,8 @@ async function handleInboxSend(e) {
 
   state.inbox.messages.push(tempMessage);
   renderMessageThread();
+  // Automatically switch to Human Takeover mode
+  updateBotStatusUI(true);
 
   elements.inboxInputMessage.value = '';
   if (elements.btnInboxSend) elements.btnInboxSend.disabled = true;

@@ -3,6 +3,7 @@ import {
   getConversations,
   getMessagesByPhone,
   sendManualMessage,
+  toggleBotStatus,
 } from '../controllers/inbox.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -19,6 +20,9 @@ router.get('/whatsapp/messages/:phone', getMessagesByPhone);
 
 // Send manual reply to customer via WhatsApp
 router.post('/whatsapp/send', sendManualMessage);
+
+// Toggle automated bot pause / resume for a customer
+router.post('/whatsapp/bot-toggle', toggleBotStatus);
 
 export default router;
 

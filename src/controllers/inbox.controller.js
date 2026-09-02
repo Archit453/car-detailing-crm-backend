@@ -81,7 +81,20 @@ export const getMessagesByPhone = asyncHandler(async (req, res) => {
     throw new ApiError(500, `Failed to fetch message thread: ${error.message}`, error);
   }
 
-  return successResponse(res, messages || [], 'Message thread retrieved successfully');
+  // Check if bot is currently paused for this customer (Human Takeover mode)
+  let botPaused = false;
+  try {
+    const { data: session } = await supabase
+      .from('whatsapp_sessions')
+      .select('step')
+      .eq('phone', cleanPhone)
+      .single();
+    botPaused = session?.step === 'human_takeover';
+  } catch (err) {
+    // Graceful fallback
+  }
+
+  return successResponse(res, messages || [], 'Message thread retrieved successfully', 200, { botPaused });
 });
 
 /**
@@ -107,7 +120,19 @@ export const sendManualMessage = asyncHandler(async (req, res) => {
   // 1. Send via Meta WhatsApp Cloud API
   await sendMetaWhatsAppMessage(cleanPhone, trimmedMessage);
 
-  // 2. Log outbound agent message in database
+  // 2. Automatically activate Human Takeover (silences bot for this customer)
+  try {
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: cleanPhone,
+      step: 'human_takeover',
+      customer_name: customerName || null,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[Session update error]', err.message);
+  }
+
+  // 3. Log outbound agent message in database
   const { data: savedMessage, error } = await supabase
     .from('whatsapp_messages')
     .insert([
@@ -143,4 +168,49 @@ export const sendManualMessage = asyncHandler(async (req, res) => {
   }
 
   return createdResponse(res, savedMessage, 'WhatsApp message sent successfully');
+});
+
+/**
+ * @desc    Pause or resume the automated bot for a customer
+ * @route   POST /api/inbox/whatsapp/bot-toggle
+ * @access  Protected (Admin)
+ */
+export const toggleBotStatus = asyncHandler(async (req, res) => {
+  assertConfigured();
+  const { phone, botActive } = req.body || {};
+
+  if (!phone || typeof phone !== 'string') {
+    throw new ApiError(400, 'Valid customer phone number is required');
+  }
+
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+
+  if (botActive) {
+    // Resume bot: remove human_takeover step so bot responds on next message
+    try {
+      await supabase
+        .from('whatsapp_sessions')
+        .delete()
+        .eq('phone', cleanPhone);
+    } catch (err) {
+      console.warn('[Resume bot error]', err.message);
+    }
+
+    return successResponse(res, { phone: cleanPhone, botPaused: false }, 'Bot resumed successfully');
+  } else {
+    // Pause bot: activate human_takeover
+    try {
+      await supabase
+        .from('whatsapp_sessions')
+        .upsert({
+          phone: cleanPhone,
+          step: 'human_takeover',
+          updated_at: new Date().toISOString(),
+        });
+    } catch (err) {
+      console.warn('[Pause bot error]', err.message);
+    }
+
+    return successResponse(res, { phone: cleanPhone, botPaused: true }, 'Bot paused for human takeover');
+  }
 });

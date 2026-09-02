@@ -35,14 +35,12 @@ Reply with 1, 2, 3, or 4 (or type the service name).`;
 /**
  * Sends outbound WhatsApp message via Meta Cloud API
  */
-async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
 export async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
   const token = config.whatsapp.token;
   const targetPhoneId = phoneNumberId || config.whatsapp.phoneNumberId;
 
   if (!token || !targetPhoneId) {
     console.log(`[Meta WhatsApp (Simulated)] -> ${to}:\n${text}`);
-    return;
     return { simulated: true };
   }
 
@@ -149,6 +147,34 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     .select('*')
     .eq('phone', fromNumber)
     .single();
+
+  // Check 1: Human Takeover Mode - Silences the automated bot completely
+  if (session && session.step === 'human_takeover') {
+    console.log(`[WhatsApp Bot Silenced] Human takeover active for ${fromNumber}. Skipping automated bot reply.`);
+    return res.status(200).json({ status: 'human_takeover_active', message: 'Bot paused for this conversation' });
+  }
+
+  // Check 2: Customer asks for a human agent
+  const cleanInput = incomingText.toLowerCase().trim();
+  const humanKeywords = ['human', 'agent', 'person', 'support', 'owner', 'talk to human', 'talk to person', 'real person', 'speak with someone', 'call me', 'talk to agent'];
+  if (humanKeywords.includes(cleanInput)) {
+    await supabase
+      .from('whatsapp_sessions')
+      .upsert({
+        phone: fromNumber,
+        step: 'human_takeover',
+        updated_at: new Date().toISOString(),
+      });
+
+    const handoffText = "I've alerted our detailing team! An agent will take over this chat shortly to assist you directly. ✨";
+    await logWhatsAppMessage(fromNumber, profileName || 'WhatsApp Customer', 'outbound', 'bot', handoffText);
+
+    if (isMeta) {
+      await sendMetaWhatsAppMessage(fromNumber, handoffText, phoneNumberId);
+      return res.status(200).json({ status: 'EVENT_RECEIVED', reply: handoffText });
+    }
+    return res.status(200).json({ status: 'success', reply: handoffText });
+  }
 
   let replyText = '';
 
