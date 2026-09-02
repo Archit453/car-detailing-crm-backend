@@ -21,3 +21,4 @@ router.get('/whatsapp/messages/:phone', getMessagesByPhone);
 router.post('/whatsapp/send', sendManualMessage);
 
 export default router;
+

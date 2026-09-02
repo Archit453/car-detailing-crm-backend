@@ -7,6 +7,7 @@ const state = {
   leads: [],
   filteredLeads: [],
   loading: false,
+  viewMode: 'table', // 'table' | 'kanban'
   viewMode: 'table', // 'table' | 'kanban' | 'inbox'
   searchQuery: '',
   filters: {
@@ -315,6 +316,7 @@ function applyFilters() {
   }
 }
 
+// Switch between Table and Kanban Views
 // Switch between Table, Kanban, and WhatsApp Inbox Views
 function switchView(mode) {
   state.viewMode = mode;
@@ -341,7 +343,20 @@ function switchView(mode) {
   });
 
   if (mode === 'table') {
+    elements.tableViewContainer.classList.remove('hidden');
+    elements.kanbanViewContainer.classList.add('hidden');
+    elements.viewToggleTable.classList.add('bg-zinc-800', 'text-white', 'shadow');
+    elements.viewToggleTable.classList.remove('text-zinc-400');
+    elements.viewToggleKanban.classList.remove('bg-zinc-800', 'text-white', 'shadow');
+    elements.viewToggleKanban.classList.add('text-zinc-400');
     renderTable();
+  } else {
+    elements.tableViewContainer.classList.add('hidden');
+    elements.kanbanViewContainer.classList.remove('hidden');
+    elements.viewToggleKanban.classList.add('bg-zinc-800', 'text-white', 'shadow');
+    elements.viewToggleKanban.classList.remove('text-zinc-400');
+    elements.viewToggleTable.classList.remove('bg-zinc-800', 'text-white', 'shadow');
+    elements.viewToggleTable.classList.add('text-zinc-400');
   } else if (mode === 'kanban') {
     renderKanban();
   } else if (mode === 'inbox') {

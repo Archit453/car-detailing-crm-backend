@@ -35,12 +35,14 @@ Reply with 1, 2, 3, or 4 (or type the service name).`;
 /**
  * Sends outbound WhatsApp message via Meta Cloud API
  */
+async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
 export async function sendMetaWhatsAppMessage(to, text, phoneNumberId) {
   const token = config.whatsapp.token;
   const targetPhoneId = phoneNumberId || config.whatsapp.phoneNumberId;
 
   if (!token || !targetPhoneId) {
     console.log(`[Meta WhatsApp (Simulated)] -> ${to}:\n${text}`);
+    return;
     return { simulated: true };
   }
 

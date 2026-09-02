@@ -92,6 +92,7 @@ CREATE POLICY "Allow public full access to whatsapp_sessions"
     USING (true)
     WITH CHECK (true);
 
+-- 7. Sample Seed Data (Optional for testing)
 -- 7. WhatsApp Messages Table (CRM Live Inbox & History)
 CREATE TABLE IF NOT EXISTS public.whatsapp_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
