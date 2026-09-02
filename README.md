@@ -1119,8 +1119,8 @@ git commit -m "feat: complete Car Detailing CRM with WhatsApp & Instagram Meta b
 # 3. Rename branch to main
 git branch -M main
 
-# 4. Link your remote GitHub repository (replace with your repo URL)
-git remote add origin https://github.com/arc-b/car-detailing-crm-backend.git
+# 4. Link your remote GitHub repository
+git remote add origin https://github.com/Archit453/car-detailing-crm-backend.git
 
 # 5. Push to GitHub
 git push -u origin main
