@@ -111,11 +111,17 @@
       }
     };
 
+    const EXTRAS_PAYLOAD = {
+      feature: "whatsapp_embedded_signup",
+      version: 3,
+      sessionInfoVersion: 3
+    };
+
     document.getElementById("btn-launch-signup").addEventListener("click", () => {
-      const directOAuthUrl = "https://www.facebook.com/v21.0/dialog/oauth?client_id=" + META_APP_ID + "&config_id=" + CONFIG_ID + "&response_type=code&redirect_uri=" + encodeURIComponent("https://car-detailing-crm-backend.vercel.app/coexistence");
+      const extrasQuery = encodeURIComponent(JSON.stringify(EXTRAS_PAYLOAD));
+      const directOAuthUrl = "https://www.facebook.com/v21.0/dialog/oauth?client_id=" + META_APP_ID + "&config_id=" + CONFIG_ID + "&response_type=code&redirect_uri=" + encodeURIComponent("https://car-detailing-crm-backend.vercel.app/coexistence") + "&extras=" + extrasQuery;
 
       if (typeof FB === "undefined") {
-        // If JS SDK is blocked by browser/adblocker, redirect directly to official Meta OAuth URL!
         window.location.href = directOAuthUrl;
         return;
       }
@@ -125,14 +131,13 @@
         if (response.authResponse && response.authResponse.code) {
           handleSuccess({ code: response.authResponse.code });
         } else {
-          // If popup failed or blocked, redirect directly
           window.location.href = directOAuthUrl;
         }
       }, {
         config_id: CONFIG_ID,
         response_type: 'code',
         override_default_response_type: true,
-        extras: { setup: {}, feature: "whatsapp_embedded_signup", version: 2, sessionInfoVersion: 3 }
+        extras: EXTRAS_PAYLOAD
       });
     });
 
