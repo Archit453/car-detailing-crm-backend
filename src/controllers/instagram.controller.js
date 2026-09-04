@@ -49,13 +49,19 @@ export const verifyInstagramWebhook = (req, res) => {
  * Sends a message back to the Instagram user via Meta Graph API
  */
 async function sendInstagramReply(recipientId, text) {
-  if (!config.instagram.pageAccessToken) {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
     console.log(`[Instagram Bot (Simulated)] -> User (${recipientId}):\n${text}`);
     return;
   }
 
   try {
-    const url = `https://graph.facebook.com/v19.0/me/messages?access_token=${encodeURIComponent(config.instagram.pageAccessToken)}`;
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? 'https://graph.instagram.com/v21.0/me/messages'
+      : 'https://graph.facebook.com/v21.0/me/messages';
+
+    const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,6 +74,8 @@ async function sendInstagramReply(recipientId, text) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[Instagram Graph API Error]', data);
+    } else {
+      console.log(`[Instagram Bot Sent Message] -> User (${recipientId}): ${text.slice(0, 50)}...`);
     }
   } catch (err) {
     console.error('[Instagram API Network Error]', err.message);

@@ -34,7 +34,7 @@ export const config = {
   },
   instagram: {
     verifyToken: process.env.INSTAGRAM_VERIFY_TOKEN || 'signature_crm_verify_token',
-    pageAccessToken: process.env.INSTAGRAM_PAGE_ACCESS_TOKEN || process.env.META_PAGE_ACCESS_TOKEN || '',
+    pageAccessToken: process.env.INSTAGRAM_PAGE_ACCESS_TOKEN || process.env.META_PAGE_ACCESS_TOKEN || 'IGAAO2AZAXVHNJBZAGFrWHBCTWJHX0VTSE5EZAm5XTDlwMkdLTTQ1STJXUFhaV1dhNEpKLWp2dldmQkxJbjlVb2FkNTdFd3lfdlNUYnFLbV9uX0g2bnVRRGQ1cmhtZA0FUWE5RdEhZAZAE9LSDlwQkdPaW00cWlUTHR3UnJPQnVvTWVnbwZDZD',
   },
   auth: {
     adminUsername: process.env.ADMIN_USERNAME || 'admin',
