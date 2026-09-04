@@ -115,10 +115,25 @@ export const handleInstagramMessage = async (req, res) => {
   // Iterate over each entry
   if (Array.isArray(body.entry)) {
     for (const entry of body.entry) {
+      // 1. Standard Messenger/Instagram format (entry.messaging)
       if (Array.isArray(entry.messaging)) {
         for (const event of entry.messaging) {
           if (event.message && !event.message.is_echo && event.sender?.id) {
             await processIncomingInstagramMessage(event.sender.id, event.message.text || '');
+          }
+        }
+      }
+
+      // 2. Instagram Graph API changes format (entry.changes)
+      if (Array.isArray(entry.changes)) {
+        for (const change of entry.changes) {
+          if (change.field === 'messages' && change.value) {
+            const val = change.value;
+            const senderId = val.sender?.id || val.from?.id;
+            const text = val.message?.text || val.text || '';
+            if (senderId && text) {
+              await processIncomingInstagramMessage(senderId, text);
+            }
           }
         }
       }
