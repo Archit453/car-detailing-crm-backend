@@ -105,10 +105,11 @@ function parseNameAndPhone(input, fallbackId) {
  * Handles Incoming Instagram Direct Messages (POST /api/webhook/instagram)
  */
 export const handleInstagramMessage = async (req, res) => {
-  const body = req.body;
+  console.log('[Instagram Webhook Received]', JSON.stringify(body));
 
   // Acknowledge receipt immediately to satisfy Meta's webhook requirement
   if (body.object !== 'instagram' && body.object !== 'page') {
+    console.log('[Instagram Webhook] Ignored object type:', body.object);
     return res.status(200).json({ status: 'IGNORED_NON_INSTAGRAM_OBJECT' });
   }
 
