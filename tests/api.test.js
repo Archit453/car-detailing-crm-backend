@@ -1,6 +1,13 @@
 import http from 'http';
 import app from '../src/app.js';
 import { SESSION_COOKIE_NAME } from '../src/utils/session.js';
+import {
+  SERVICE_BUTTONS_P1,
+  SERVICE_BUTTONS_P2,
+  REENGAGE_BUTTONS,
+  MORE_HELP_BUTTONS_P1,
+  MORE_HELP_BUTTONS_P2,
+} from '../src/controllers/instagram.controller.js';
 
 async function runTests() {
   console.log('🧪 Starting API Unit & Integration Verification (with Auth & KeepAlive)...\n');
@@ -783,10 +790,46 @@ async function runTests() {
       .single();
     assert(returnSessionNothing.step === 'human_takeover', 'Selecting Nothing Else sets step to human_takeover');
 
+    // Test 46: Native In-Bubble Button Template Constraints
+    assert(
+      Array.isArray(SERVICE_BUTTONS_P1) &&
+      SERVICE_BUTTONS_P1.length <= 3 &&
+      SERVICE_BUTTONS_P1.every((b) => b.type === 'postback' && b.title.length <= 20),
+      'SERVICE_BUTTONS_P1 complies with Meta Button Template limits (max 3 buttons, <= 20 chars)'
+    );
+
+    assert(
+      Array.isArray(SERVICE_BUTTONS_P2) &&
+      SERVICE_BUTTONS_P2.length <= 3 &&
+      SERVICE_BUTTONS_P2.every((b) => b.type === 'postback' && b.title.length <= 20),
+      'SERVICE_BUTTONS_P2 complies with Meta Button Template limits (max 3 buttons, <= 20 chars)'
+    );
+
+    assert(
+      Array.isArray(REENGAGE_BUTTONS) &&
+      REENGAGE_BUTTONS.length === 2 &&
+      REENGAGE_BUTTONS.every((b) => b.type === 'postback' && b.title.length <= 20),
+      'REENGAGE_BUTTONS complies with Meta Button Template limits (2 buttons, <= 20 chars)'
+    );
+
+    assert(
+      Array.isArray(MORE_HELP_BUTTONS_P1) &&
+      MORE_HELP_BUTTONS_P1.length <= 3 &&
+      MORE_HELP_BUTTONS_P1.every((b) => b.type === 'postback' && b.title.length <= 20),
+      'MORE_HELP_BUTTONS_P1 complies with Meta Button Template limits (max 3 buttons, <= 20 chars)'
+    );
+
+    assert(
+      Array.isArray(MORE_HELP_BUTTONS_P2) &&
+      MORE_HELP_BUTTONS_P2.length <= 3 &&
+      MORE_HELP_BUTTONS_P2.every((b) => (b.type === 'postback' || b.type === 'web_url') && b.title.length <= 20),
+      'MORE_HELP_BUTTONS_P2 complies with Meta Button Template limits (max 3 buttons, <= 20 chars)'
+    );
+
     // Cleanup test sessions
     await supabase.from('whatsapp_sessions').delete().in('phone', ['ig_test_return_user_01', 'ig_test_return_user_02']);
 
-    // Test 46: POST /api/auth/logout clears session
+    // Test 47: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

@@ -2073,45 +2073,69 @@ function renderInstagramMessageThread() {
 
       // Check if incoming customer message is a button tap response
       const isButtonTap =
-        ['1', '2', '3', '4', '5', 'menu', 'location'].includes(rawText.trim().toLowerCase()) ||
+        ['1', '2', '3', '4', '5', 'menu', 'location', 'reengage_yes', 'reengage_no', 'more_location', 'more_pricing', 'more_callback', 'more_whatsapp', 'more_nothing'].includes(rawText.trim().toLowerCase()) ||
         rawText.includes('1. PPF') ||
         rawText.includes('2. Ceramic') ||
         rawText.includes('3. Correction') ||
         rawText.includes('4. Interior') ||
-        rawText.includes('5. Full Detail');
+        rawText.includes('5. Full Detail') ||
+        rawText.includes('🛡️ PPF') ||
+        rawText.includes('✨ Ceramic Coating') ||
+        rawText.includes('🚘 Paint Correction') ||
+        rawText.includes('🧼 Interior Detail') ||
+        rawText.includes('🏎️ Full Detailing') ||
+        rawText.includes('✅ Yes') ||
+        rawText.includes('❌ No') ||
+        rawText.includes('📍 Studio Location') ||
+        rawText.includes('💰 Pricing Packages') ||
+        rawText.includes('📞 Request Callback') ||
+        rawText.includes('💬 WhatsApp Support') ||
+        rawText.includes('❌ Nothing Else');
+
+      // Helper function to render in-bubble button cards matching Meta Instagram template
+      const renderInBubbleButtons = (buttons) => `
+        <div class="mt-3 pt-2 border-t border-white/10 flex flex-col gap-1.5 w-full">
+          ${buttons
+            .map(
+              (btn) => `
+            <div class="w-full text-center py-2 px-3 rounded-xl bg-zinc-800/90 hover:bg-zinc-700/90 text-zinc-100 font-semibold text-xs border border-zinc-700/70 shadow-xs select-none transition">
+              ${escapeHtml(btn)}
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      `;
 
       // Check if outbound bot or staff message delivered interactive buttons
       let buttonPreviewHtml = '';
-      if (
-        rawText.includes('Tap a button below') ||
-        rawText.includes('Tap an option below') ||
-        rawText.includes('Which service are you interested in')
+      if (rawText.includes('interior & complete packages')) {
+        buttonPreviewHtml = renderInBubbleButtons(['🧼 Interior Detail', '🏎️ Full Detailing']);
+      } else if (
+        rawText.includes('Which service are you interested in') ||
+        rawText.includes('Which additional service would you like to explore') ||
+        rawText.includes('Which detailing package can we help you with')
       ) {
-        buttonPreviewHtml = `
-          <div class="mt-2.5 pt-2 border-t border-indigo-500/30">
-            <span class="text-[9px] text-indigo-300 font-semibold block mb-1">Quick Reply Buttons Delivered:</span>
-            <div class="flex flex-wrap gap-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-900/70 text-pink-200 border border-pink-700/60 shadow-sm">1. PPF 🛡️</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-900/70 text-pink-200 border border-pink-700/60 shadow-sm">2. Ceramic ✨</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-900/70 text-pink-200 border border-pink-700/60 shadow-sm">3. Correction 🚘</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-900/70 text-pink-200 border border-pink-700/60 shadow-sm">4. Interior 🧼</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-900/70 text-pink-200 border border-pink-700/60 shadow-sm">5. Full Detail 🏎️</span>
-            </div>
-          </div>
-        `;
+        buttonPreviewHtml = renderInBubbleButtons(['🛡️ PPF', '✨ Ceramic Coating', '🚘 Paint Correction']);
+      } else if (rawText.includes('Would you like to explore another detailing service?')) {
+        buttonPreviewHtml = renderInBubbleButtons(['✅ Yes', '❌ No']);
+      } else if (rawText.includes('connect directly / finish')) {
+        buttonPreviewHtml = renderInBubbleButtons(['💬 WhatsApp Support', '❌ Nothing Else']);
+      } else if (rawText.includes('Address: Studio 4')) {
+        buttonPreviewHtml = renderInBubbleButtons(['💰 Pricing Packages', '📞 Request Callback', '❌ Nothing Else']);
+      } else if (rawText.includes('Packages Overview') || rawText.includes('Creation Detailing Packages')) {
+        buttonPreviewHtml = renderInBubbleButtons(['📞 Request Callback', '💬 WhatsApp Support', '❌ Nothing Else']);
+      } else if (rawText.includes('Priority Callback Requested')) {
+        buttonPreviewHtml = renderInBubbleButtons(['💬 WhatsApp Support', '❌ Nothing Else']);
+      } else if (rawText.includes('Chat with our detailing specialist directly on WhatsApp')) {
+        buttonPreviewHtml = renderInBubbleButtons(['Chat on WhatsApp 💬', '❌ Nothing Else']);
+      } else if (rawText.includes('Can we help you with anything else?')) {
+        buttonPreviewHtml = renderInBubbleButtons(['📍 Studio Location', '💰 Pricing Packages', '📞 Request Callback']);
       } else if (
         rawText.includes('Connect directly with our senior detailing specialist') ||
         rawText.includes('Chat on WhatsApp')
       ) {
-        buttonPreviewHtml = `
-          <div class="mt-2.5 pt-2 border-t border-pink-500/30">
-            <span class="text-[9px] text-emerald-300 font-semibold block mb-1">Interactive Link Buttons Delivered:</span>
-            <div class="flex flex-wrap gap-1.5">
-              <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-700/90 text-white shadow-sm border border-emerald-500/70">💬 Chat on WhatsApp</span>
-              <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-zinc-800 text-zinc-200 shadow-sm border border-zinc-700">🚗 View Services</span>
-            </div>
-          </div>
-        `;
+        buttonPreviewHtml = renderInBubbleButtons(['💬 Chat on WhatsApp', '🚗 View Services']);
       }
 
       if (isCustomer) {
@@ -2398,17 +2422,31 @@ async function handleSendServiceButtons() {
 
   const senderId = state.instagramInbox.activeSenderId;
   const customerName = state.instagramInbox.activeCustomerName;
-  const promptText = 'Which service are you interested in?\n\nTap an option below:';
 
-  const quickReplies = [
-    { content_type: 'text', title: '1. PPF 🛡️', payload: '1' },
-    { content_type: 'text', title: '2. Ceramic ✨', payload: '2' },
-    { content_type: 'text', title: '3. Correction 🚘', payload: '3' },
-    { content_type: 'text', title: '4. Interior 🧼', payload: '4' },
-    { content_type: 'text', title: '5. Full Detail 🏎️', payload: '5' },
+  const card1Buttons = [
+    { type: 'postback', title: '🛡️ PPF', payload: '1' },
+    { type: 'postback', title: '✨ Ceramic Coating', payload: '2' },
+    { type: 'postback', title: '🚘 Paint Correction', payload: '3' },
   ];
 
-  await dispatchInstagramButtonMessage(senderId, customerName, promptText, { quick_replies: quickReplies });
+  const card2Buttons = [
+    { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
+    { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+  ];
+
+  await dispatchInstagramButtonMessage(
+    senderId,
+    customerName,
+    'Which service are you interested in? Tap an option below:',
+    { buttons: card1Buttons }
+  );
+
+  await dispatchInstagramButtonMessage(
+    senderId,
+    customerName,
+    'Or choose from our interior & complete packages 👇',
+    { buttons: card2Buttons }
+  );
 }
 
 /**

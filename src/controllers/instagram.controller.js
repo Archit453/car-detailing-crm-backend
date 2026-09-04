@@ -5,23 +5,57 @@ const SERVICE_MAP = {
   '1': 'PPF',
   'ppf': 'PPF',
   'paint protection': 'PPF',
+  '🛡️ ppf': 'PPF',
   '2': 'Ceramic Coating',
   'ceramic': 'Ceramic Coating',
   'ceramic coating': 'Ceramic Coating',
+  '✨ ceramic coating': 'Ceramic Coating',
   '3': 'Paint Correction',
   'paint correction': 'Paint Correction',
   'correction': 'Paint Correction',
+  '🚘 paint correction': 'Paint Correction',
   '4': 'Interior Detailing',
   'interior': 'Interior Detailing',
   'interior detailing': 'Interior Detailing',
+  '🧼 interior detail': 'Interior Detailing',
   '5': 'Full Detail Package',
   'full detail': 'Full Detail Package',
+  'full detailing': 'Full Detail Package',
+  '🏎️ full detailing': 'Full Detail Package',
 };
 
 const WELCOME_TEXT =
   `Welcome to Signature Detailing 🚗✨\n\n` +
   `Which service are you interested in?\n\n` +
   `Tap a button below or reply with 1, 2, 3, 4, or 5:`;
+
+// Native In-Bubble Button Templates (Meta limit: 3 buttons per bubble, <= 20 chars per title)
+export const SERVICE_BUTTONS_P1 = [
+  { type: 'postback', title: '🛡️ PPF', payload: '1' },
+  { type: 'postback', title: '✨ Ceramic Coating', payload: '2' },
+  { type: 'postback', title: '🚘 Paint Correction', payload: '3' },
+];
+
+export const SERVICE_BUTTONS_P2 = [
+  { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
+  { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+];
+
+export const REENGAGE_BUTTONS = [
+  { type: 'postback', title: '✅ Yes', payload: 'REENGAGE_YES' },
+  { type: 'postback', title: '❌ No', payload: 'REENGAGE_NO' },
+];
+
+export const MORE_HELP_BUTTONS_P1 = [
+  { type: 'postback', title: '📍 Studio Location', payload: 'MORE_LOCATION' },
+  { type: 'postback', title: '💰 Pricing Packages', payload: 'MORE_PRICING' },
+  { type: 'postback', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
+];
+
+export const MORE_HELP_BUTTONS_P2 = [
+  { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
+  { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+];
 
 export const SERVICE_QUICK_REPLIES = [
   { content_type: 'text', title: '1. PPF 🛡️', payload: '1' },
@@ -197,7 +231,7 @@ export async function sendInstagramCommentReply(commentId, message) {
 
 /**
  * Sends a private DM reply to an Instagram commenter via comment_id
- * Supports attaching Quick Reply buttons
+ * Supports attaching in-bubble Button Templates or Quick Reply buttons
  */
 export async function sendInstagramPrivateReply(commentId, text, options = {}) {
   const token = config.instagram.pageAccessToken;
@@ -219,7 +253,18 @@ export async function sendInstagramPrivateReply(commentId, text, options = {}) {
     const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
 
     let messageObj = { text };
-    if (Array.isArray(options.quick_replies) && options.quick_replies.length > 0) {
+    if (Array.isArray(options.buttons) && options.buttons.length > 0) {
+      messageObj = {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'button',
+            text: text.slice(0, 640),
+            buttons: options.buttons,
+          },
+        },
+      };
+    } else if (Array.isArray(options.quick_replies) && options.quick_replies.length > 0) {
       messageObj = {
         text,
         quick_replies: options.quick_replies,
@@ -241,7 +286,7 @@ export async function sendInstagramPrivateReply(commentId, text, options = {}) {
       return { success: false, error: data.error?.message || 'Meta rejected private reply', details: data };
     }
 
-    console.log(`[Instagram Private Reply DM Sent] -> Comment (${cleanCommentId}): "${text.slice(0, 50)}..." [Buttons: ${Boolean(options.quick_replies)}]`);
+    console.log(`[Instagram Private Reply DM Sent] -> Comment (${cleanCommentId}): "${text.slice(0, 50)}..." [Buttons: ${Boolean(options.buttons || options.quick_replies)}]`);
     return { success: true, data };
   } catch (err) {
     console.error('[Instagram Private Reply Network Error]', err.message);
@@ -276,9 +321,9 @@ export async function processIncomingInstagramComment(commentData) {
   // 3. Dispatch public reply
   const publicResult = await sendInstagramCommentReply(commentId, publicReplyMessage);
 
-  // 4. Dispatch private reply DM with Quick Reply buttons
+  // 4. Dispatch private reply DM with native in-bubble buttons
   const privateResult = await sendInstagramPrivateReply(commentId, privateDmMessage, {
-    quick_replies: SERVICE_QUICK_REPLIES,
+    buttons: SERVICE_BUTTONS_P1,
   });
 
   // 5. Store in latestInstagramComments feed
@@ -575,8 +620,13 @@ async function processIncomingInstagramMessage(senderId, text) {
     // Reset command or Menu button click
     if (normalizedText === 'reset' || normalizedText === 'start' || normalizedText === 'menu') {
       await deleteInstagramSession(senderId);
-      await sendInstagramReply(senderId, WELCOME_TEXT, { quick_replies: SERVICE_QUICK_REPLIES });
-      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
+      const welcomeCard1 = `Welcome to Signature Detailing 🚗✨\n\nWhich service are you interested in? Tap an option below:`;
+      await sendInstagramReply(senderId, welcomeCard1, { buttons: SERVICE_BUTTONS_P1 });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeCard1);
+
+      const welcomeCard2 = `Or choose from our interior & complete packages 👇`;
+      await sendInstagramReply(senderId, welcomeCard2, { buttons: SERVICE_BUTTONS_P2 });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeCard2);
       return;
     }
 
@@ -588,7 +638,7 @@ async function processIncomingInstagramMessage(senderId, text) {
         `⏰ Hours: Mon-Sat 9:30 AM - 8:00 PM\n` +
         `📞 Phone: +91 98765 43210\n\n` +
         `Which service can we assist you with today? Tap an option below:`;
-      await sendInstagramReply(senderId, locationText, { quick_replies: SERVICE_QUICK_REPLIES });
+      await sendInstagramReply(senderId, locationText, { buttons: SERVICE_BUTTONS_P1 });
       await logInstagramMessage(senderId, customerName, 'outbound', 'bot', locationText);
       return;
     }
@@ -613,12 +663,7 @@ async function processIncomingInstagramMessage(senderId, text) {
         `Welcome back, ${session.customer_name || 'friend'}! 🚗✨\n\n` +
         `Would you like to explore another detailing service?`;
 
-      const reengageButtons = [
-        { content_type: 'text', title: '✅ Yes', payload: 'REENGAGE_YES' },
-        { content_type: 'text', title: '❌ No', payload: 'REENGAGE_NO' },
-      ];
-
-      await sendInstagramReply(senderId, reengageMsg, { quick_replies: reengageButtons });
+      await sendInstagramReply(senderId, reengageMsg, { buttons: REENGAGE_BUTTONS });
       await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reengageMsg);
       return;
     }
@@ -634,23 +679,19 @@ async function processIncomingInstagramMessage(senderId, text) {
         normalizedText.includes('yes');
 
       if (isYes) {
-        // YES Path: Show Services
+        // YES Path: Show Services with native in-bubble buttons
         await setInstagramSession(senderId, {
           ...session,
           step: 'awaiting_additional_service',
         });
 
-        const servicesText = `Great! Which additional service would you like to explore? Tap an option below:`;
-        const serviceButtons = [
-          { content_type: 'text', title: '🛡️ PPF', payload: '1' },
-          { content_type: 'text', title: '✨ Ceramic Coating', payload: '2' },
-          { content_type: 'text', title: '🚘 Paint Correction', payload: '3' },
-          { content_type: 'text', title: '🧼 Interior Detail', payload: '4' },
-          { content_type: 'text', title: '🏎️ Full Detailing', payload: '5' },
-        ];
+        const servicesCard1 = `Great! Which additional service would you like to explore? Tap an option below:`;
+        await sendInstagramReply(senderId, servicesCard1, { buttons: SERVICE_BUTTONS_P1 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', servicesCard1);
 
-        await sendInstagramReply(senderId, servicesText, { quick_replies: serviceButtons });
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', servicesText);
+        const servicesCard2 = `Or choose from our interior & complete packages 👇`;
+        await sendInstagramReply(senderId, servicesCard2, { buttons: SERVICE_BUTTONS_P2 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', servicesCard2);
         return;
       }
 
@@ -663,28 +704,24 @@ async function processIncomingInstagramMessage(senderId, text) {
         normalizedText.includes('no');
 
       if (isNo) {
-        // NO Path (Improved): Acknowledge on-file inquiry & offer help options
+        // NO Path (Improved): Acknowledge on-file inquiry & offer help options with native buttons
         await setInstagramSession(senderId, {
           ...session,
           step: 'awaiting_more_help',
         });
 
         const previousService = session.selected_service || 'Detailing Service';
-        const noPathMsg =
+        const noPathMsg1 =
           `No problem at all, ${session.customer_name || 'friend'}! 👍\n\n` +
           `We already have your inquiry for ${previousService} on file.\n\n` +
           `Can we help you with anything else?`;
 
-        const moreHelpButtons = [
-          { content_type: 'text', title: '📍 Studio Location', payload: 'MORE_LOCATION' },
-          { content_type: 'text', title: '💰 Pricing', payload: 'MORE_PRICING' },
-          { content_type: 'text', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
-          { content_type: 'text', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
-          { content_type: 'text', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
-        ];
+        await sendInstagramReply(senderId, noPathMsg1, { buttons: MORE_HELP_BUTTONS_P1 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg1);
 
-        await sendInstagramReply(senderId, noPathMsg, { quick_replies: moreHelpButtons });
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg);
+        const noPathMsg2 = `Or connect directly / finish 👇`;
+        await sendInstagramReply(senderId, noPathMsg2, { buttons: MORE_HELP_BUTTONS_P2 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg2);
         return;
       }
     }
@@ -746,12 +783,11 @@ async function processIncomingInstagramMessage(senderId, text) {
           `Can we help you with anything else?`;
 
         const followUpButtons = [
-          { content_type: 'text', title: '💰 Pricing', payload: 'MORE_PRICING' },
-          { content_type: 'text', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
-          { content_type: 'text', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
-          { content_type: 'text', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+          { type: 'postback', title: '💰 Pricing Packages', payload: 'MORE_PRICING' },
+          { type: 'postback', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
+          { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
         ];
-        await sendInstagramReply(senderId, locationMsg, { quick_replies: followUpButtons });
+        await sendInstagramReply(senderId, locationMsg, { buttons: followUpButtons });
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', locationMsg);
         return;
       }
@@ -769,11 +805,11 @@ async function processIncomingInstagramMessage(senderId, text) {
           `Can we help you with anything else?`;
 
         const followUpButtons = [
-          { content_type: 'text', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
-          { content_type: 'text', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
-          { content_type: 'text', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+          { type: 'postback', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
+          { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
+          { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
         ];
-        await sendInstagramReply(senderId, pricingMsg, { quick_replies: followUpButtons });
+        await sendInstagramReply(senderId, pricingMsg, { buttons: followUpButtons });
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', pricingMsg);
         return;
       }
@@ -786,10 +822,10 @@ async function processIncomingInstagramMessage(senderId, text) {
           `Can we help you with anything else?`;
 
         const followUpButtons = [
-          { content_type: 'text', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
-          { content_type: 'text', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+          { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
+          { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
         ];
-        await sendInstagramReply(senderId, callbackMsg, { quick_replies: followUpButtons });
+        await sendInstagramReply(senderId, callbackMsg, { buttons: followUpButtons });
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', callbackMsg);
         return;
       }
@@ -802,9 +838,14 @@ async function processIncomingInstagramMessage(senderId, text) {
           `Can we help you with anything else?`;
 
         const followUpButtons = [
-          { content_type: 'text', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+          {
+            type: 'web_url',
+            url: 'https://wa.me/919876543210?text=Hi%2C%20I%20inquired%20on%20Instagram%20and%20need%20assistance.',
+            title: 'Chat on WhatsApp 💬',
+          },
+          { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
         ];
-        await sendInstagramReply(senderId, waMsg, { quick_replies: followUpButtons });
+        await sendInstagramReply(senderId, waMsg, { buttons: followUpButtons });
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', waMsg);
         return;
       }
@@ -861,13 +902,18 @@ async function processIncomingInstagramMessage(senderId, text) {
         await sendInstagramReply(senderId, reply);
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
       } else {
-        // Send menu with interactive quick reply buttons
+        // Send menu with native in-bubble Button Template cards
         await setInstagramSession(senderId, {
           step: 'awaiting_service',
         });
 
-        await sendInstagramReply(senderId, WELCOME_TEXT, { quick_replies: SERVICE_QUICK_REPLIES });
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
+        const welcomeCard1 = `Welcome to Signature Detailing 🚗✨\n\nWhich service are you interested in? Tap an option below:`;
+        await sendInstagramReply(senderId, welcomeCard1, { buttons: SERVICE_BUTTONS_P1 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeCard1);
+
+        const welcomeCard2 = `Or choose from our interior & complete packages 👇`;
+        await sendInstagramReply(senderId, welcomeCard2, { buttons: SERVICE_BUTTONS_P2 });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeCard2);
       }
       return;
     }
