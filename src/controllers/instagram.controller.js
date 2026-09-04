@@ -70,6 +70,8 @@ export let latestInstagramWebhookEvent = {
   count: 0,
 };
 
+export let latestInstagramComments = [];
+
 /**
  * Dispatches an outbound message to an Instagram user via Meta Graph API
  * Supports plain text, Quick Reply buttons, and Button Templates
@@ -153,6 +155,174 @@ async function sendInstagramReply(recipientId, text, options = {}) {
 }
 
 /**
+ * Publishes a public reply to an Instagram comment on a post or reel
+ */
+export async function sendInstagramCommentReply(commentId, message) {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    return { success: false, error: 'No Instagram Access Token configured in environment' };
+  }
+
+  const cleanCommentId = String(commentId || '').trim();
+  if (!cleanCommentId) {
+    return { success: false, error: 'Valid comment ID is required' };
+  }
+
+  try {
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? `https://graph.instagram.com/v21.0/${cleanCommentId}/replies`
+      : `https://graph.facebook.com/v21.0/${cleanCommentId}/replies`;
+
+    const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[Instagram Comment Reply Error]', data);
+      return { success: false, error: data.error?.message || 'Meta rejected comment reply', details: data };
+    }
+
+    console.log(`[Instagram Public Comment Reply Posted] -> Comment (${cleanCommentId}): "${message.slice(0, 50)}..."`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Instagram Comment Reply Network Error]', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Sends a private DM reply to an Instagram commenter via comment_id
+ * Supports attaching Quick Reply buttons
+ */
+export async function sendInstagramPrivateReply(commentId, text, options = {}) {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    return { success: false, error: 'No Instagram Access Token configured in environment' };
+  }
+
+  const cleanCommentId = String(commentId || '').trim();
+  if (!cleanCommentId) {
+    return { success: false, error: 'Valid comment ID is required' };
+  }
+
+  try {
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? 'https://graph.instagram.com/v21.0/me/messages'
+      : 'https://graph.facebook.com/v21.0/me/messages';
+
+    const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
+
+    let messageObj = { text };
+    if (Array.isArray(options.quick_replies) && options.quick_replies.length > 0) {
+      messageObj = {
+        text,
+        quick_replies: options.quick_replies,
+      };
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient: { comment_id: cleanCommentId },
+        message: messageObj,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[Instagram Private Reply Error]', data);
+      return { success: false, error: data.error?.message || 'Meta rejected private reply', details: data };
+    }
+
+    console.log(`[Instagram Private Reply DM Sent] -> Comment (${cleanCommentId}): "${text.slice(0, 50)}..." [Buttons: ${Boolean(options.quick_replies)}]`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Instagram Private Reply Network Error]', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Processes an incoming comment event from Instagram posts or reels
+ */
+export async function processIncomingInstagramComment(commentData) {
+  const commentId = commentData.id;
+  const commentText = commentData.text || '';
+  const fromUsername = commentData.from?.username || 'user';
+  const fromId = commentData.from?.id;
+  const mediaId = commentData.media?.id || 'post';
+
+  console.log(`[Instagram Post Comment Received] From @${fromUsername} on Media ${mediaId}: "${commentText}"`);
+
+  // Prevent infinite reply loops if comment is from own account
+  if (fromUsername === 'creationindia_' || fromId === '29347217818200339') {
+    console.log('[Instagram Comment Ignored] Comment made by own account @creationindia_.');
+    return { status: 'IGNORED_OWN_ACCOUNT' };
+  }
+
+  // 1. Compose automated public reply for post
+  const publicReplyMessage = `Hi @${fromUsername}! Thanks for reaching out. We just sent you a DM with our detailing packages & pricing. Please check your message requests! 🚗✨`;
+
+  // 2. Compose private reply DM with interactive service buttons
+  const privateDmMessage = `Hi @${fromUsername}! Thanks for your comment on our post 🚗✨\n\nWhich detailing package can we help you with? Tap an option below:`;
+
+  // 3. Dispatch public reply
+  const publicResult = await sendInstagramCommentReply(commentId, publicReplyMessage);
+
+  // 4. Dispatch private reply DM with Quick Reply buttons
+  const privateResult = await sendInstagramPrivateReply(commentId, privateDmMessage, {
+    quick_replies: SERVICE_QUICK_REPLIES,
+  });
+
+  // 5. Store in latestInstagramComments feed
+  const commentRecord = {
+    id: commentId,
+    mediaId,
+    fromUsername,
+    fromId: fromId || null,
+    text: commentText,
+    createdAt: new Date().toISOString(),
+    publicReplied: publicResult.success,
+    publicReplyText: publicReplyMessage,
+    publicError: publicResult.error || null,
+    privateReplied: privateResult.success,
+    privateError: privateResult.error || null,
+  };
+
+  latestInstagramComments.unshift(commentRecord);
+  if (latestInstagramComments.length > 50) {
+    latestInstagramComments.pop();
+  }
+
+  // 6. Log to message history if numeric user ID exists
+  if (fromId && /^\d+$/.test(String(fromId))) {
+    await logInstagramMessage(
+      fromId,
+      `@${fromUsername}`,
+      'inbound',
+      'customer',
+      `[Comment on Post ${mediaId}]: ${commentText}`
+    );
+    await logInstagramMessage(
+      fromId,
+      `@${fromUsername}`,
+      'outbound',
+      'bot',
+      `[Auto-DM to Comment]: ${privateDmMessage}`
+    );
+  }
+
+  return { status: 'COMMENT_PROCESSED', commentRecord };
+}
+
+/**
  * Parses customer name and phone from freeform text input
  */
 function parseNameAndPhone(input, fallbackId) {
@@ -179,20 +349,34 @@ export const handleInstagramMessage = async (req, res) => {
   console.log('[Instagram Webhook Received]', JSON.stringify(body));
 
   const firstMsg = body.entry?.[0]?.messaging?.[0] || body.entry?.[0]?.changes?.[0]?.value;
+  const firstChange = body.entry?.[0]?.changes?.[0];
+  const isCommentEvent = firstChange?.field === 'comments' || firstChange?.field === 'live_comments';
+
   const rawText =
     firstMsg?.message?.quick_reply?.payload ||
     firstMsg?.message?.text ||
     firstMsg?.postback?.payload ||
     firstMsg?.postback?.title ||
     firstMsg?.text ||
+    (isCommentEvent ? firstChange.value?.text : null) ||
     null;
+
+  const senderId =
+    firstMsg?.sender?.id ||
+    firstMsg?.from?.id ||
+    (isCommentEvent ? firstChange.value?.from?.username || firstChange.value?.from?.id : null) ||
+    null;
+
+  const status = isCommentEvent
+    ? `Post Comment from @${firstChange.value?.from?.username || 'user'}: "${(firstChange.value?.text || '').slice(0, 40)}"`
+    : 'Webhook event processed';
 
   latestInstagramWebhookEvent = {
     receivedAt: new Date().toISOString(),
     object: body.object,
-    senderId: firstMsg?.sender?.id || firstMsg?.from?.id || null,
+    senderId,
     text: rawText,
-    status: 'Webhook event processed',
+    status,
     count: (latestInstagramWebhookEvent.count || 0) + 1,
     raw: body,
   };
@@ -229,6 +413,7 @@ export const handleInstagramMessage = async (req, res) => {
       // 2. Instagram Graph API changes format (entry.changes)
       if (Array.isArray(entry.changes)) {
         for (const change of entry.changes) {
+          // Direct Messages received via changes
           if (change.field === 'messages' && change.value) {
             const val = change.value;
             const senderId = val.sender?.id || val.from?.id;
@@ -240,6 +425,10 @@ export const handleInstagramMessage = async (req, res) => {
             if (senderId && text) {
               await processIncomingInstagramMessage(senderId, text);
             }
+          }
+          // Post and Reel Comments received via changes
+          else if ((change.field === 'comments' || change.field === 'live_comments') && change.value) {
+            await processIncomingInstagramComment(change.value);
           }
         }
       }

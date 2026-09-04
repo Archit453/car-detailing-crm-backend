@@ -14,6 +14,9 @@ import {
   syncInstagramConversations,
   getInstagramIceBreakers,
   configureInstagramIceBreakers,
+  getInstagramComments,
+  replyToInstagramComment,
+  triggerInstagramCommentTestPing,
 } from '../controllers/inbox.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -39,6 +42,11 @@ router.post('/instagram/test-ping', triggerInstagramTestPing);
 router.post('/instagram/sync', syncInstagramConversations);
 router.get('/instagram/icebreakers', getInstagramIceBreakers);
 router.post('/instagram/icebreakers', configureInstagramIceBreakers);
+
+// Instagram Post Comments Routes
+router.get('/instagram/comments', getInstagramComments);
+router.post('/instagram/comments/reply', replyToInstagramComment);
+router.post('/instagram/comments/test-ping', triggerInstagramCommentTestPing);
 
 export default router;
 

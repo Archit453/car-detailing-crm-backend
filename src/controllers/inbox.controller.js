@@ -10,6 +10,9 @@ import {
   handleInstagramMessage,
   SERVICE_QUICK_REPLIES,
   WHATSAPP_LINK_BUTTONS,
+  latestInstagramComments,
+  sendInstagramCommentReply,
+  processIncomingInstagramComment,
 } from './instagram.controller.js';
 
 const assertConfigured = () => {
@@ -734,4 +737,97 @@ export const configureInstagramIceBreakers = asyncHandler(async (req, res) => {
     if (err instanceof ApiError) throw err;
     throw new ApiError(500, `Failed to set ice breakers: ${err.message}`, err);
   }
+});
+
+/**
+ * @desc    Get recent Instagram post/reel comments and their auto-reply status
+ * @route   GET /api/inbox/instagram/comments
+ * @access  Protected (Admin)
+ */
+export const getInstagramComments = asyncHandler(async (req, res) => {
+  return successResponse(
+    res,
+    {
+      count: latestInstagramComments.length,
+      comments: latestInstagramComments,
+    },
+    'Instagram post comments retrieved successfully'
+  );
+});
+
+/**
+ * @desc    Send manual staff reply to an Instagram comment
+ * @route   POST /api/inbox/instagram/comments/reply
+ * @access  Protected (Admin)
+ */
+export const replyToInstagramComment = asyncHandler(async (req, res) => {
+  const { commentId, message } = req.body || {};
+
+  if (!commentId || typeof commentId !== 'string') {
+    throw new ApiError(400, 'Valid comment ID is required');
+  }
+
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    throw new ApiError(400, 'Reply message text cannot be empty');
+  }
+
+  const cleanCommentId = commentId.trim();
+  const trimmedMessage = message.trim();
+
+  const result = await sendInstagramCommentReply(cleanCommentId, trimmedMessage);
+  if (!result.success) {
+    throw new ApiError(400, `Meta rejected comment reply: ${result.error}`);
+  }
+
+  // Update in-memory record if exists
+  const existing = latestInstagramComments.find((c) => c.id === cleanCommentId);
+  if (existing) {
+    existing.manualReply = trimmedMessage;
+    existing.manualReplyAt = new Date().toISOString();
+  }
+
+  return successResponse(
+    res,
+    { commentId: cleanCommentId, message: trimmedMessage, result },
+    'Comment reply published successfully on Instagram'
+  );
+});
+
+/**
+ * @desc    Simulate an incoming Instagram post comment to verify auto-reply & DM dispatch
+ * @route   POST /api/inbox/instagram/comments/test-ping
+ * @access  Protected (Admin)
+ */
+export const triggerInstagramCommentTestPing = asyncHandler(async (req, res) => {
+  const {
+    username = 'car_enthusiast_india',
+    comment = 'What is the price for Ceramic Coating on Scorpio-N?',
+    mediaId = '17999887766554433',
+  } = req.body || {};
+
+  const simulatedCommentPayload = {
+    id: 'sim_comment_' + Date.now(),
+    text: comment,
+    from: {
+      id: '17841400998877665',
+      username,
+    },
+    media: {
+      id: mediaId,
+      media_product_type: 'FEED',
+    },
+    created_time: Math.floor(Date.now() / 1000),
+  };
+
+  const outcome = await processIncomingInstagramComment(simulatedCommentPayload);
+
+  return successResponse(
+    res,
+    {
+      simulated: true,
+      comment: simulatedCommentPayload,
+      outcome,
+    },
+    'Simulated Instagram comment processed: Auto public reply & private DM quick-replies dispatched'
+  );
 });

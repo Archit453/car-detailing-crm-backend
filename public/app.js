@@ -57,6 +57,11 @@ const state = {
     searchQuery: '',
     botPaused: false,
   },
+  instagramComments: {
+    list: [],
+    activeTab: 'dms',
+    loading: false,
+  },
 };
 
 // DOM Elements
@@ -165,6 +170,16 @@ const elements = {
   btnIgSync: document.getElementById('btn-ig-sync'),
   btnSendIgServiceButtons: document.getElementById('btn-send-ig-service-buttons'),
   btnSendIgWhatsappButton: document.getElementById('btn-send-ig-whatsapp-button'),
+  tabIgDms: document.getElementById('tab-ig-dms'),
+  tabIgComments: document.getElementById('tab-ig-comments'),
+  igDmsTabCount: document.getElementById('ig-dms-tab-count'),
+  igCommentsTabCount: document.getElementById('ig-comments-tab-count'),
+  instagramDmsView: document.getElementById('instagram-dms-view'),
+  instagramCommentsView: document.getElementById('instagram-comments-view'),
+  instagramCommentsStream: document.getElementById('instagram-comments-stream'),
+  btnRefreshIgComments: document.getElementById('btn-refresh-ig-comments'),
+  btnCommentsSimulateFeed: document.getElementById('btn-comments-simulate-feed'),
+  btnIgTestCommentPing: document.getElementById('btn-ig-test-comment-ping'),
 
   // Instagram Diagnostics Modal
   modalIgDiagnostics: document.getElementById('modal-ig-diagnostics'),
@@ -408,6 +423,21 @@ function setupEventListeners() {
   if (elements.btnSyncIcebreakers) {
     elements.btnSyncIcebreakers.addEventListener('click', handleSyncIceBreakers);
   }
+  if (elements.tabIgDms) {
+    elements.tabIgDms.addEventListener('click', () => switchInstagramSubTab('dms'));
+  }
+  if (elements.tabIgComments) {
+    elements.tabIgComments.addEventListener('click', () => switchInstagramSubTab('comments'));
+  }
+  if (elements.btnRefreshIgComments) {
+    elements.btnRefreshIgComments.addEventListener('click', fetchInstagramComments);
+  }
+  if (elements.btnCommentsSimulateFeed) {
+    elements.btnCommentsSimulateFeed.addEventListener('click', triggerInstagramCommentTestPing);
+  }
+  if (elements.btnIgTestCommentPing) {
+    elements.btnIgTestCommentPing.addEventListener('click', triggerInstagramCommentTestPing);
+  }
   if (elements.btnModalTestPing) {
     elements.btnModalTestPing.addEventListener('click', triggerInstagramTestPing);
   }
@@ -598,6 +628,7 @@ function switchView(mode) {
   } else if (mode === 'instagram') {
     fetchInstagramConversations(true);
     fetchInstagramWebhookStatus();
+    fetchInstagramComments();
   }
 }
 
@@ -1747,6 +1778,9 @@ async function fetchInstagramConversations(autoSelectFirst = false) {
     if (elements.igConversationCount) {
       elements.igConversationCount.textContent = state.instagramInbox.conversations.length;
     }
+    if (elements.igDmsTabCount) {
+      elements.igDmsTabCount.textContent = state.instagramInbox.conversations.length;
+    }
     if (elements.statInstagram) {
       elements.statInstagram.textContent = state.instagramInbox.conversations.length;
     }
@@ -2490,5 +2524,266 @@ async function handleSyncIceBreakers() {
 window.handleSendServiceButtons = handleSendServiceButtons;
 window.handleSendWhatsappButton = handleSendWhatsappButton;
 window.handleSyncIceBreakers = handleSyncIceBreakers;
+
+/**
+ * Switch between Instagram DMs and Post & Reel Comments sub-tabs
+ */
+function switchInstagramSubTab(tab) {
+  state.instagramComments.activeTab = tab;
+
+  if (tab === 'dms') {
+    if (elements.instagramDmsView) {
+      elements.instagramDmsView.classList.remove('hidden');
+      elements.instagramDmsView.classList.add('flex');
+    }
+    if (elements.instagramCommentsView) {
+      elements.instagramCommentsView.classList.add('hidden');
+      elements.instagramCommentsView.classList.remove('flex');
+    }
+    if (elements.tabIgDms) {
+      elements.tabIgDms.className = 'px-3.5 py-1.5 rounded-md text-xs font-bold transition bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm flex items-center space-x-1.5 active:scale-95';
+    }
+    if (elements.tabIgComments) {
+      elements.tabIgComments.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition flex items-center space-x-1.5 active:scale-95 bg-transparent';
+    }
+  } else if (tab === 'comments') {
+    if (elements.instagramDmsView) {
+      elements.instagramDmsView.classList.add('hidden');
+      elements.instagramDmsView.classList.remove('flex');
+    }
+    if (elements.instagramCommentsView) {
+      elements.instagramCommentsView.classList.remove('hidden');
+      elements.instagramCommentsView.classList.add('flex');
+    }
+    if (elements.tabIgComments) {
+      elements.tabIgComments.className = 'px-3.5 py-1.5 rounded-md text-xs font-bold transition bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm flex items-center space-x-1.5 active:scale-95';
+    }
+    if (elements.tabIgDms) {
+      elements.tabIgDms.className = 'px-3.5 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition flex items-center space-x-1.5 active:scale-95 bg-transparent';
+    }
+    fetchInstagramComments();
+  }
+}
+
+/**
+ * Fetch latest Instagram post comments and auto-reply delivery status
+ */
+async function fetchInstagramComments() {
+  state.instagramComments.loading = true;
+
+  try {
+    const res = await fetch('/api/inbox/instagram/comments');
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load Instagram comments');
+
+    state.instagramComments.list = json.data?.comments || [];
+    if (elements.igCommentsTabCount) {
+      elements.igCommentsTabCount.textContent = state.instagramComments.list.length;
+    }
+
+    renderInstagramCommentsList();
+  } catch (err) {
+    console.error('[Instagram Comments Fetch Error]', err);
+    showToast(err.message, 'error');
+  } finally {
+    state.instagramComments.loading = false;
+  }
+}
+
+/**
+ * Render the live stream of Instagram post comments and auto-replies
+ */
+function renderInstagramCommentsList() {
+  if (!elements.instagramCommentsStream) return;
+
+  const comments = state.instagramComments.list;
+  if (!comments || comments.length === 0) {
+    elements.instagramCommentsStream.innerHTML = `
+      <div class="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-6 text-zinc-500">
+        <div class="w-12 h-12 rounded-2xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center mb-3">
+          <i data-lucide="message-circle" class="w-6 h-6"></i>
+        </div>
+        <p class="text-sm font-bold text-zinc-200">No Post Comments Recorded Yet</p>
+        <p class="text-xs text-zinc-500 mt-1 max-w-[320px]">
+          When customers comment on your Instagram posts or reels, the comments appear here with automated public replies and private DM quick-replies.
+        </p>
+        <button onclick="triggerInstagramCommentTestPing()" class="mt-4 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 text-white text-xs font-bold shadow-lg shadow-pink-600/20 transition active:scale-95">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
+          <span>Simulate Test Post Comment</span>
+        </button>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  elements.instagramCommentsStream.innerHTML = comments
+    .map((c) => {
+      const initials = (c.fromUsername || 'User')
+        .slice(0, 2)
+        .toUpperCase();
+
+      const publicBadge = c.publicReplied
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/80">
+             <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Public Auto-Replied
+           </span>`
+        : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-950/80 text-amber-300 border border-amber-800/80">
+             <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Public Reply Pending/Failed
+           </span>`;
+
+      const privateBadge = c.privateReplied
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-pink-950/80 text-pink-300 border border-pink-800/80">
+             <i data-lucide="send" class="w-3 h-3 mr-1"></i> Private DM Sent w/ Quick Buttons
+           </span>`
+        : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-amber-950/80 text-amber-300 border border-amber-800/80">
+             <i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Private DM Pending/Failed
+           </span>`;
+
+      const publicReplyQuote = c.publicReplyText
+        ? `
+          <div class="mt-2 text-xs bg-zinc-900/90 border border-zinc-800 p-2.5 rounded-lg text-zinc-300 flex items-start space-x-2">
+            <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-pink-400 mt-0.5 shrink-0"></i>
+            <div>
+              <span class="font-semibold text-pink-400">@creationindia_ public reply:</span>
+              <p class="mt-0.5 text-zinc-200">${escapeHtml(c.publicReplyText)}</p>
+            </div>
+          </div>
+        `
+        : '';
+
+      return `
+        <div class="p-4 rounded-xl bg-zinc-900/70 border border-zinc-800/80 hover:border-zinc-700/80 transition space-y-3 shadow-sm">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 to-amber-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                ${escapeHtml(initials)}
+              </div>
+              <div>
+                <span class="text-xs font-bold text-white">@${escapeHtml(c.fromUsername || 'user')}</span>
+                <span class="text-[11px] text-zinc-500 ml-2">on Post #${escapeHtml(String(c.mediaId || '').slice(-8) || 'post')}</span>
+              </div>
+            </div>
+            <span class="text-[11px] text-zinc-500 font-medium">${formatTimeAgo(c.createdAt)}</span>
+          </div>
+
+          <!-- Customer Comment Text -->
+          <div class="p-3 rounded-lg bg-zinc-950 border border-zinc-800/90 text-sm text-zinc-200">
+            "${escapeHtml(c.text || '')}"
+          </div>
+
+          <!-- Delivery Status Badges -->
+          <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+            ${publicBadge}
+            ${privateBadge}
+          </div>
+
+          <!-- Public Reply Quoted Text -->
+          ${publicReplyQuote}
+
+          <!-- Inline Staff Reply Form -->
+          <form onsubmit="handleSendManualCommentReply(event, '${escapeHtml(c.id)}')" class="mt-2.5 pt-2.5 border-t border-zinc-800/60 flex items-center space-x-2">
+            <input 
+              type="text" 
+              placeholder="Post an additional public reply to @${escapeHtml(c.fromUsername || 'user')}..."
+              class="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500 transition"
+              required
+            />
+            <button 
+              type="submit" 
+              class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold flex items-center space-x-1 transition active:scale-95"
+            >
+              <i data-lucide="send" class="w-3 h-3 text-pink-400"></i>
+              <span>Reply</span>
+            </button>
+          </form>
+        </div>
+      `;
+    })
+    .join('');
+
+  lucide.createIcons();
+}
+
+/**
+ * Handle manual staff reply to an Instagram post comment
+ */
+async function handleSendManualCommentReply(event, commentId) {
+  event.preventDefault();
+  const form = event.target;
+  const input = form.querySelector('input');
+  const message = (input?.value || '').trim();
+
+  if (!message) return;
+
+  try {
+    const res = await fetch('/api/inbox/instagram/comments/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentId, message }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to post reply to comment');
+
+    showToast('Reply published successfully to Instagram comment!', 'success');
+    input.value = '';
+    fetchInstagramComments();
+  } catch (err) {
+    console.error('[Manual Comment Reply Error]', err);
+    showToast(err.message, 'error');
+  }
+}
+
+/**
+ * 1-Click Simulation of a customer commenting on an Instagram Post
+ */
+async function triggerInstagramCommentTestPing() {
+  showToast('Simulating customer comment on post...', 'info');
+
+  try {
+    const res = await fetch('/api/inbox/instagram/comments/test-ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'car_enthusiast_delhi',
+        text: 'What is the price of Ceramic Coating on BMW 3 series? Do you have slots this weekend?',
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Simulation failed');
+
+    showToast('Customer comment simulated! Public reply & DM dispatched.', 'success');
+    
+    // Switch to comments sub-tab to view the new comment
+    switchInstagramSubTab('comments');
+    fetchInstagramComments();
+    fetchInstagramConversations();
+  } catch (err) {
+    console.error('[Comment Test Ping Error]', err);
+    showToast(err.message, 'error');
+  }
+}
+
+window.switchInstagramSubTab = switchInstagramSubTab;
+window.fetchInstagramComments = fetchInstagramComments;
+window.handleSendManualCommentReply = handleSendManualCommentReply;
+window.triggerInstagramCommentTestPing = triggerInstagramCommentTestPing;
+
 
 

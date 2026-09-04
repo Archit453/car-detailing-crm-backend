@@ -490,7 +490,92 @@ async function runTests() {
     const unauthIceBreakersRes = await fetch(`${baseUrl}/api/inbox/instagram/icebreakers`);
     assert(unauthIceBreakersRes.status === 401, 'Unauthenticated GET /api/inbox/instagram/icebreakers returns 401');
 
-    // Test 38: POST /api/auth/logout clears session
+    // Test 38: POST /api/webhook/instagram with post comment payload
+    const igCommentWebhookRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            time: 1725450000,
+            changes: [
+              {
+                field: 'comments',
+                value: {
+                  id: 'comment_test_123',
+                  text: 'PPF price for Fortuner please?',
+                  from: { id: '99887766', username: 'suv_owner_delhi' },
+                  media: { id: 'media_reel_9988' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const igCommentWebhookJson = await igCommentWebhookRes.json();
+    assert(igCommentWebhookRes.status === 200, 'POST /api/webhook/instagram with post comment returns 200 OK');
+    assert(igCommentWebhookJson.status === 'EVENT_RECEIVED', 'Webhook receives and parses post comments');
+
+    // Test 39: POST /api/webhook/instagram ignores self-comments from @creationindia_
+    const igSelfCommentRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            time: 1725450000,
+            changes: [
+              {
+                field: 'comments',
+                value: {
+                  id: 'comment_self_123',
+                  text: 'Thank you for reaching out!',
+                  from: { id: '29347217818200339', username: 'creationindia_' },
+                  media: { id: 'media_reel_9988' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(igSelfCommentRes.status === 200, 'POST /api/webhook/instagram ignores self comments from @creationindia_');
+
+    // Test 40: Authenticated GET /api/inbox/instagram/comments returns comment stream
+    const igCommentsListRes = await fetch(`${baseUrl}/api/inbox/instagram/comments`, {
+      headers: { Cookie: sessionCookie },
+    });
+    const igCommentsListJson = await igCommentsListRes.json();
+    assert(igCommentsListRes.status === 200, 'GET /api/inbox/instagram/comments returns 200 OK');
+    assert(Array.isArray(igCommentsListJson.data?.comments), 'Response data contains comments array');
+    assert(igCommentsListJson.data.comments.some((c) => c.id === 'comment_test_123'), 'Includes simulated webhook comment');
+
+    // Test 41: Authenticated POST /api/inbox/instagram/comments/test-ping
+    const igCommentPingRes = await fetch(`${baseUrl}/api/inbox/instagram/comments/test-ping`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({
+        username: 'test_commenter_gurgaon',
+        text: 'How much time needed for ceramic coating?',
+      }),
+    });
+    const igCommentPingJson = await igCommentPingRes.json();
+    assert(igCommentPingRes.status === 200, 'POST /api/inbox/instagram/comments/test-ping returns 200 OK');
+    assert(igCommentPingJson.success === true, 'Test ping comment returns success: true');
+
+    // Test 42: Unauthenticated GET /api/inbox/instagram/comments returns 401
+    const unauthIgCommentsRes = await fetch(`${baseUrl}/api/inbox/instagram/comments`);
+    assert(unauthIgCommentsRes.status === 401, 'Unauthenticated GET /api/inbox/instagram/comments returns 401');
+
+    // Test 43: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },
@@ -499,7 +584,7 @@ async function runTests() {
     assert(logoutRes.status === 200, 'POST /api/auth/logout returns 200 OK');
     assert(logoutSetCookie.includes('Max-Age=0'), 'Logout clears crm_session cookie with Max-Age=0');
 
-    // Test 18: 404 Route Not Found
+    // Test 44: 404 Route Not Found
     const notFoundRes = await fetch(`${baseUrl}/api/non-existent-endpoint`);
     const notFoundJson = await notFoundRes.json();
     assert(notFoundRes.status === 404, 'Undefined route returns 404 Not Found');
