@@ -74,8 +74,8 @@ app.get('/coexistence', (req, res) => {
   res.sendFile(path.join(publicPath, 'coexistence.html'));
 });
 
-// Privacy Policy (Required for Meta App Review and Publishing)
-app.get('/privacy', (req, res) => {
+// Privacy Policy & Data Deletion (Required for Meta App Review and Publishing)
+app.get(['/privacy', '/privacy-policy', '/data-deletion', '/terms'], (req, res) => {
   res.sendFile(path.join(publicPath, 'privacy.html'));
 });
 
