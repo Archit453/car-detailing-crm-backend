@@ -191,6 +191,9 @@ async function runTests() {
       }),
     });
     const igPostJson = await igPostRes.json();
+    assert(igPostRes.status === 200, 'POST /api/webhook/instagram returns 200 OK');
+    assert(igPostJson.status === 'EVENT_RECEIVED', 'POST /api/webhook/instagram returns EVENT_RECEIVED');
+
     // Test 17: Unauthenticated GET /api/inbox/whatsapp/conversations returns 401
     const unauthInboxRes = await fetch(`${baseUrl}/api/inbox/whatsapp/conversations`);
     assert(unauthInboxRes.status === 401, 'Unauthenticated GET /api/inbox/whatsapp/conversations returns 401');
