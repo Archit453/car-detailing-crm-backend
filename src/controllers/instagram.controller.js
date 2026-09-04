@@ -120,41 +120,38 @@ export const handleInstagramMessage = async (req, res) => {
   return res.status(200).json({ status: 'EVENT_RECEIVED' });
 };
 
-const inMemoryInstagramSessions = new Map();
-
 async function getInstagramSession(senderId) {
   try {
-    const { data, error } = await supabase
-      .from('instagram_sessions')
+    const { data } = await supabase
+      .from('whatsapp_sessions')
       .select('*')
-      .eq('sender_id', senderId)
+      .eq('phone', `ig_${senderId}`)
       .single();
-    if (!error && data) return data;
+    return data || null;
   } catch (err) {
-    // fallback
+    return null;
   }
-  return inMemoryInstagramSessions.get(senderId) || null;
 }
 
 async function setInstagramSession(senderId, sessionData) {
-  inMemoryInstagramSessions.set(senderId, sessionData);
   try {
-    await supabase.from('instagram_sessions').upsert({
-      sender_id: senderId,
-      ...sessionData,
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: `ig_${senderId}`,
+      step: sessionData.step,
+      selected_service: sessionData.selected_service || null,
+      customer_name: sessionData.customer_name || null,
       updated_at: new Date().toISOString(),
     });
   } catch (err) {
-    // silently fallback to memory
+    console.warn('[Instagram Session Upsert Warning]', err.message);
   }
 }
 
 async function deleteInstagramSession(senderId) {
-  inMemoryInstagramSessions.delete(senderId);
   try {
-    await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
+    await supabase.from('whatsapp_sessions').delete().eq('phone', `ig_${senderId}`);
   } catch (err) {
-    // silently fallback
+    console.warn('[Instagram Session Delete Warning]', err.message);
   }
 }
 
@@ -164,27 +161,12 @@ async function deleteInstagramSession(senderId) {
 async function processIncomingInstagramMessage(senderId, text) {
   const normalizedText = text.trim().toLowerCase();
 
-  if (!isConfigured) {
-    console.warn('[Instagram Bot] Database not configured. Sending fallback.');
-    await sendInstagramReply(
-      senderId,
-      `Welcome to Signature Detailing! Our booking system is currently updating. Please call us directly for inquiries.`
-    );
-    return;
-  }
-
   try {
     // 1. Check existing session for this Instagram user
-    const { data: session } = await supabase
-      .from('instagram_sessions')
-      .select('*')
-      .eq('sender_id', senderId)
-      .single();
     const session = await getInstagramSession(senderId);
 
     // Reset command
     if (normalizedText === 'reset' || normalizedText === 'start' || normalizedText === 'menu') {
-      await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
       await deleteInstagramSession(senderId);
       await sendInstagramReply(senderId, WELCOME_TEXT);
       return;
@@ -196,14 +178,6 @@ async function processIncomingInstagramMessage(senderId, text) {
 
       if (matchedService) {
         // Save selected service and advance state
-        await supabase
-          .from('instagram_sessions')
-          .upsert({
-            sender_id: senderId,
-            step: 'awaiting_contact',
-            selected_service: matchedService,
-            updated_at: new Date().toISOString(),
-          });
         await setInstagramSession(senderId, {
           step: 'awaiting_contact',
           selected_service: matchedService,
@@ -216,13 +190,6 @@ async function processIncomingInstagramMessage(senderId, text) {
         await sendInstagramReply(senderId, reply);
       } else {
         // Send menu
-        await supabase
-          .from('instagram_sessions')
-          .upsert({
-            sender_id: senderId,
-            step: 'awaiting_service',
-            updated_at: new Date().toISOString(),
-          });
         await setInstagramSession(senderId, {
           step: 'awaiting_service',
         });
@@ -255,7 +222,6 @@ async function processIncomingInstagramMessage(senderId, text) {
       }
 
       // Clear session after successful lead capture
-      await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
       await deleteInstagramSession(senderId);
 
       // Send confirmation message to customer
