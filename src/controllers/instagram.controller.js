@@ -395,7 +395,7 @@ export async function processIncomingInstagramComment(commentData) {
     latestInstagramComments.pop();
   }
 
-  // 6. Log to message history if numeric user ID exists
+  // 6. Log to message history if numeric user ID exists & prime session
   if (fromId && /^\d+$/.test(String(fromId))) {
     await logInstagramMessage(
       fromId,
@@ -411,6 +411,24 @@ export async function processIncomingInstagramComment(commentData) {
       'bot',
       `[Auto-DM to Comment]: ${privateDmMessage}`
     );
+
+    // Prime session so button taps from this comment DM are immediately recognized
+    try {
+      const existingSession = await getInstagramSession(fromId);
+      if (existingSession?.customer_name && !existingSession.customer_name.startsWith('Instagram User')) {
+        await setInstagramSession(fromId, {
+          ...existingSession,
+          step: 'awaiting_additional_service',
+        });
+      } else {
+        await setInstagramSession(fromId, {
+          step: 'awaiting_service',
+          customer_name: existingSession?.customer_name || null,
+        });
+      }
+    } catch (sessionErr) {
+      console.warn('[Instagram Comment Session Priming Warning]', sessionErr.message);
+    }
   }
 
   return { status: 'COMMENT_PROCESSED', commentRecord };
@@ -439,10 +457,10 @@ export function isDuplicateInstagramMessage(mid, senderId, text) {
     return false;
   }
 
-  // Deduplicate by sender + clean text within 5 seconds window
+  // Deduplicate by sender + clean text within 2 seconds window
   const fallbackKey = `${senderId}_${String(text || '').trim().toLowerCase()}`;
   const lastTime = processedMessageIds.get(fallbackKey);
-  if (lastTime && now - lastTime < 5000) {
+  if (lastTime && now - lastTime < 2000) {
     return true;
   }
   processedMessageIds.set(fallbackKey, now);
@@ -728,6 +746,62 @@ async function logInstagramMessage(senderId, customerName, direction, sender, te
 }
 
 /**
+ * Handles additional service selection for returning/completed customers
+ */
+async function handleAdditionalServiceSelection(senderId, customerName, selectedService, session) {
+  try {
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('source', 'instagram')
+      .eq('name', session.customer_name)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingLead) {
+      const combinedService = existingLead.service.includes(selectedService)
+        ? existingLead.service
+        : `${existingLead.service}, ${selectedService}`;
+      await supabase
+        .from('leads')
+        .update({ service: combinedService, updated_at: new Date().toISOString() })
+        .eq('id', existingLead.id);
+    }
+  } catch (err) {
+    console.warn('[Update Lead Additional Service Warning]', err.message);
+  }
+
+  // Return session to completed state
+  await setInstagramSession(senderId, {
+    ...session,
+    step: 'completed',
+    selected_service: selectedService,
+  });
+
+  const yesReply =
+    `Great choice! 👍\n\n` +
+    `We've added your interest in ${selectedService}.\n\n` +
+    `Our team will contact you shortly.`;
+
+  const confirmButtons = [
+    {
+      type: 'web_url',
+      url: WEBSITE_URL,
+      title: '🌐 Visit Website',
+    },
+    {
+      type: 'web_url',
+      url: 'https://wa.me/919876543210?text=Hi%20Signature%20Detailing,%20I%20am%20inquiring%20about%20' + encodeURIComponent(selectedService),
+      title: 'Chat on WhatsApp 💬',
+    },
+  ];
+
+  await sendInstagramReply(senderId, yesReply, { buttons: confirmButtons });
+  await logInstagramMessage(senderId, session.customer_name || customerName, 'outbound', 'bot', yesReply);
+}
+
+/**
  * Process single user message with multi-turn session state
  */
 async function processIncomingInstagramMessage(senderId, text) {
@@ -741,10 +815,24 @@ async function processIncomingInstagramMessage(senderId, text) {
     // 2. Log inbound customer message to Supabase
     await logInstagramMessage(senderId, customerName, 'inbound', 'customer', text);
 
-    // 3. Check for Human Takeover (silences bot if staff has paused it)
+    // 3. Check for Human Takeover (silences bot if staff has paused it, but resumes if user taps a button/command)
     if (session && session.step === 'human_takeover') {
-      console.log(`[Instagram Bot Silenced] Human takeover active for ig_${senderId}. Skipping automated reply.`);
-      return;
+      const isInteractiveButtonOrCommand =
+        Boolean(SERVICE_MAP[normalizedText]) ||
+        normalizedText.startsWith('more_') ||
+        normalizedText.startsWith('reengage_') ||
+        normalizedText === 'menu' ||
+        normalizedText === 'start' ||
+        normalizedText === 'reset' ||
+        normalizedText === 'website' ||
+        normalizedText === 'location';
+
+      if (isInteractiveButtonOrCommand) {
+        console.log(`[Instagram Bot Resuming] User ig_${senderId} interacted with button/command "${text}" during human takeover. Reactivating bot.`);
+      } else {
+        console.log(`[Instagram Bot Silenced] Human takeover active for ig_${senderId}. Skipping automated reply.`);
+        return;
+      }
     }
 
     // Reset command or Menu button click
@@ -806,6 +894,208 @@ async function processIncomingInstagramMessage(senderId, text) {
       return;
     }
 
+    // =========================================================================
+    // GLOBAL BUTTON HANDLERS: Reliably process interactive button taps across ALL states
+    // =========================================================================
+
+    // A. Service Selection Buttons (1-5, or service title postbacks)
+    const matchedService = SERVICE_MAP[normalizedText];
+    if (matchedService) {
+      // 1. If currently awaiting contact, update chosen service before receiving phone
+      if (session && session.step === 'awaiting_contact') {
+        await setInstagramSession(senderId, {
+          ...session,
+          selected_service: matchedService,
+        });
+
+        const reply =
+          `Updated! You selected: ${matchedService} 🚗\n\n` +
+          `Please reply with your Name and 10-digit Phone Number (e.g. Rahul Sharma, 98765 43210):`;
+
+        await sendInstagramReply(senderId, reply);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
+        return;
+      }
+
+      // 2. If customer details are already on file, add service interest and confirm immediately
+      const hasContactOnFile =
+        Boolean(session?.customer_name) &&
+        !session.customer_name.startsWith('Instagram User') &&
+        session.step !== 'awaiting_service';
+
+      if (hasContactOnFile) {
+        await handleAdditionalServiceSelection(senderId, customerName, matchedService, session);
+        return;
+      }
+
+      // 3. New customer or awaiting_service: Advance to awaiting_contact
+      await setInstagramSession(senderId, {
+        step: 'awaiting_contact',
+        selected_service: matchedService,
+        customer_name: session?.customer_name || null,
+      });
+
+      const reply =
+        `Great choice! You selected: ${matchedService} 🚗\n\n` +
+        `To prepare your customized quote and check garage slot availability, please reply with your Name and Phone Number (e.g. Rahul Sharma, +91 98765 43210):`;
+
+      await sendInstagramReply(senderId, reply);
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
+      return;
+    }
+
+    // B. Re-engagement Button Payloads (YES / NO)
+    if (normalizedText === 'reengage_yes') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_additional_service',
+      });
+
+      const servicesPrompt = `Great! Which additional service would you like to explore? Tap an option below:`;
+      await sendInstagramReply(senderId, servicesPrompt, { elements: ALL_SERVICES_GENERIC_ELEMENTS });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', servicesPrompt);
+      return;
+    }
+
+    if (normalizedText === 'reengage_no') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_more_help',
+      });
+
+      const previousService = session?.selected_service || 'Detailing Service';
+      const noPathMsg1 =
+        `No problem at all, ${session?.customer_name || 'friend'}! 👍\n\n` +
+        `We already have your inquiry for ${previousService} on file.\n\n` +
+        `Can we help you with anything else?`;
+
+      await sendInstagramReply(senderId, noPathMsg1, { buttons: MORE_HELP_BUTTONS_P1 });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg1);
+
+      const noPathMsg2 = `Or connect directly / finish 👇`;
+      await sendInstagramReply(senderId, noPathMsg2, { buttons: MORE_HELP_BUTTONS_P2 });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg2);
+      return;
+    }
+
+    // C. More Help Choice Payloads
+    if (normalizedText === 'more_location') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_more_help',
+      });
+      const locationMsg =
+        `📍 Creation Auto Detailing Studio\n\n` +
+        `🏢 Address: Studio 4, Detailing Bay Road, Automobile Hub, India\n` +
+        `⏰ Hours: Mon-Sat 9:30 AM - 8:00 PM\n` +
+        `📞 Phone: +91 98765 43210\n\n` +
+        `Can we help you with anything else?`;
+
+      const followUpButtons = [
+        { type: 'postback', title: '💰 Pricing Packages', payload: 'MORE_PRICING' },
+        { type: 'postback', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
+        { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+      ];
+      await sendInstagramReply(senderId, locationMsg, { buttons: followUpButtons });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', locationMsg);
+      return;
+    }
+
+    if (normalizedText === 'more_pricing') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_more_help',
+      });
+      const pricingMsg =
+        `💰 Creation Detailing Packages Overview:\n\n` +
+        `• PPF: Starting ₹45,000 (Self-healing TPU)\n` +
+        `• Ceramic Coating: Starting ₹18,000 (9H/10H)\n` +
+        `• Paint Correction: Starting ₹8,500\n` +
+        `• Interior Detailing: Starting ₹4,500\n` +
+        `• Full Detailing Package: Starting ₹28,000\n\n` +
+        `Our specialist will provide the exact quotation for your vehicle!\n\n` +
+        `Can we help you with anything else?`;
+
+      const followUpButtons = [
+        { type: 'postback', title: '📞 Request Callback', payload: 'MORE_CALLBACK' },
+        { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
+        { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+      ];
+      await sendInstagramReply(senderId, pricingMsg, { buttons: followUpButtons });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', pricingMsg);
+      return;
+    }
+
+    if (normalizedText === 'more_callback') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_more_help',
+      });
+      const callbackMsg =
+        `📞 Priority Callback Requested!\n\n` +
+        `We have notified our detailing manager to call you as soon as possible. 👍\n\n` +
+        `Can we help you with anything else?`;
+
+      const followUpButtons = [
+        { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
+        { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+      ];
+      await sendInstagramReply(senderId, callbackMsg, { buttons: followUpButtons });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', callbackMsg);
+      return;
+    }
+
+    if (normalizedText === 'more_whatsapp') {
+      await setInstagramSession(senderId, {
+        ...session,
+        step: 'awaiting_more_help',
+      });
+      const waMsg =
+        `💬 Chat with our detailing specialist directly on WhatsApp:\n` +
+        `https://wa.me/919876543210?text=Hi%2C%20I%20inquired%20on%20Instagram%20and%20need%20assistance.\n\n` +
+        `Can we help you with anything else?`;
+
+      const followUpButtons = [
+        {
+          type: 'web_url',
+          url: 'https://wa.me/919876543210?text=Hi%2C%20I%20inquired%20on%20Instagram%20and%20need%20assistance.',
+          title: 'Chat on WhatsApp 💬',
+        },
+        { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
+      ];
+      await sendInstagramReply(senderId, waMsg, { buttons: followUpButtons });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', waMsg);
+      return;
+    }
+
+    if (normalizedText === 'more_nothing') {
+      const nothingElseMsg =
+        `Perfect! 🚗✨\n\n` +
+        `Our team will reach out shortly.\n\n` +
+        `Feel free to message us anytime if you need:\n` +
+        `• PPF\n` +
+        `• Ceramic Coating\n` +
+        `• Paint Correction\n` +
+        `• Interior Detailing\n` +
+        `• Full Detailing\n\n` +
+        `Have a great day!`;
+
+      await sendInstagramReply(senderId, nothingElseMsg);
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', nothingElseMsg);
+
+      // Mark bot_active = false and waiting_for_human
+      await setInstagramSession(senderId, {
+        step: 'human_takeover',
+        customer_name: session?.customer_name || null,
+        selected_service: session?.selected_service || null,
+      });
+      return;
+    }
+
+    // =========================================================================
+    // STATE-SPECIFIC CONVERSATIONAL HANDLERS
+    // =========================================================================
+
     // State: Completed - Customer previously submitted contact details
     if (session && session.step === 'completed') {
       const digitsOnly = text.replace(/\D/g, '');
@@ -841,18 +1131,16 @@ async function processIncomingInstagramMessage(senderId, text) {
       return;
     }
 
-    // State: Awaiting Decision on Exploring Another Service (YES / NO)
+    // State: Awaiting Decision on Exploring Another Service (YES / NO text inputs)
     if (session && session.step === 'awaiting_reengagement_decision') {
       const isYes =
-        normalizedText === 'reengage_yes' ||
         normalizedText === 'yes' ||
         normalizedText === 'y' ||
         normalizedText === 'yeah' ||
-        normalizedText === '1' ||
+        normalizedText === 'sure' ||
         normalizedText.includes('yes');
 
       if (isYes) {
-        // YES Path: Show Services with native in-bubble buttons
         await setInstagramSession(senderId, {
           ...session,
           step: 'awaiting_additional_service',
@@ -865,15 +1153,12 @@ async function processIncomingInstagramMessage(senderId, text) {
       }
 
       const isNo =
-        normalizedText === 'reengage_no' ||
         normalizedText === 'no' ||
         normalizedText === 'n' ||
         normalizedText === 'nope' ||
-        normalizedText === '2' ||
         normalizedText.includes('no');
 
       if (isNo) {
-        // NO Path (Improved): Acknowledge on-file inquiry & offer help options with native buttons
         await setInstagramSession(senderId, {
           ...session,
           step: 'awaiting_more_help',
@@ -893,57 +1178,26 @@ async function processIncomingInstagramMessage(senderId, text) {
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', noPathMsg2);
         return;
       }
+
+      // Clarification prompt if customer replies with other text
+      const clarifyMsg = `Would you like to explore another detailing service, ${session.customer_name || 'friend'}? Tap an option below:`;
+      await sendInstagramReply(senderId, clarifyMsg, { buttons: REENGAGE_BUTTONS });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', clarifyMsg);
+      return;
     }
 
-    // State: Awaiting Additional Service Selection (YES Path)
+    // State: Awaiting Additional Service Selection (Free-text fallback)
     if (session && session.step === 'awaiting_additional_service') {
-      const selectedService = SERVICE_MAP[normalizedText];
-      if (selectedService) {
-        try {
-          const { data: existingLead } = await supabase
-            .from('leads')
-            .select('*')
-            .eq('source', 'instagram')
-            .eq('name', session.customer_name)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (existingLead) {
-            const combinedService = existingLead.service.includes(selectedService)
-              ? existingLead.service
-              : `${existingLead.service}, ${selectedService}`;
-            await supabase
-              .from('leads')
-              .update({ service: combinedService, updated_at: new Date().toISOString() })
-              .eq('id', existingLead.id);
-          }
-        } catch (err) {
-          console.warn('[Update Lead Additional Service Warning]', err.message);
-        }
-
-        // Return session to completed state
-        await setInstagramSession(senderId, {
-          ...session,
-          step: 'completed',
-          selected_service: selectedService,
-        });
-
-        const yesReply =
-          `Great choice! 👍\n\n` +
-          `We've added your interest in ${selectedService}.\n\n` +
-          `Our team will contact you shortly.`;
-
-        await sendInstagramReply(senderId, yesReply);
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', yesReply);
-        return;
-      }
+      const servicesPrompt = `Which detailing service would you like to explore, ${session.customer_name || 'friend'}? Tap an option below:`;
+      await sendInstagramReply(senderId, servicesPrompt, { elements: ALL_SERVICES_GENERIC_ELEMENTS });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', servicesPrompt);
+      return;
     }
 
-    // State: Awaiting More Help Choices (NO Path)
+    // State: Awaiting More Help Choices (Conversational free-text fallback)
     if (session && session.step === 'awaiting_more_help') {
-      // 1. Studio Location
-      if (normalizedText === 'more_location' || normalizedText.includes('location') || normalizedText.includes('where') || normalizedText.includes('address')) {
+      // 1. Studio Location keywords
+      if (normalizedText.includes('location') || normalizedText.includes('where') || normalizedText.includes('address')) {
         const locationMsg =
           `📍 Creation Auto Detailing Studio\n\n` +
           `🏢 Address: Studio 4, Detailing Bay Road, Automobile Hub, India\n` +
@@ -961,8 +1215,8 @@ async function processIncomingInstagramMessage(senderId, text) {
         return;
       }
 
-      // 2. Pricing & Packages
-      if (normalizedText === 'more_pricing' || normalizedText.includes('pricing') || normalizedText.includes('price') || normalizedText.includes('package')) {
+      // 2. Pricing keywords
+      if (normalizedText.includes('pricing') || normalizedText.includes('price') || normalizedText.includes('package') || normalizedText.includes('cost')) {
         const pricingMsg =
           `💰 Creation Detailing Packages Overview:\n\n` +
           `• PPF: Starting ₹45,000 (Self-healing TPU)\n` +
@@ -983,8 +1237,8 @@ async function processIncomingInstagramMessage(senderId, text) {
         return;
       }
 
-      // 3. Request Callback
-      if (normalizedText === 'more_callback' || normalizedText.includes('callback') || normalizedText.includes('call')) {
+      // 3. Callback keywords
+      if (normalizedText.includes('callback') || normalizedText.includes('call')) {
         const callbackMsg =
           `📞 Priority Callback Requested!\n\n` +
           `We have notified our detailing manager to call you as soon as possible. 👍\n\n` +
@@ -999,8 +1253,8 @@ async function processIncomingInstagramMessage(senderId, text) {
         return;
       }
 
-      // 4. WhatsApp Support
-      if (normalizedText === 'more_whatsapp' || normalizedText.includes('whatsapp')) {
+      // 4. WhatsApp keywords
+      if (normalizedText.includes('whatsapp')) {
         const waMsg =
           `💬 Chat with our detailing specialist directly on WhatsApp:\n` +
           `https://wa.me/919876543210?text=Hi%2C%20I%20inquired%20on%20Instagram%20and%20need%20assistance.\n\n` +
@@ -1019,15 +1273,15 @@ async function processIncomingInstagramMessage(senderId, text) {
         return;
       }
 
-      // 5. Nothing Else
+      // 5. Done / Nothing / Bye keywords
       if (
-        normalizedText === 'more_nothing' ||
         normalizedText.includes('nothing') ||
         normalizedText === 'no' ||
         normalizedText === 'nope' ||
         normalizedText === 'bye' ||
         normalizedText.includes("that's all") ||
-        normalizedText.includes('thats all')
+        normalizedText.includes('thats all') ||
+        normalizedText === 'done'
       ) {
         const nothingElseMsg =
           `Perfect! 🚗✨\n\n` +
@@ -1043,7 +1297,6 @@ async function processIncomingInstagramMessage(senderId, text) {
         await sendInstagramReply(senderId, nothingElseMsg);
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', nothingElseMsg);
 
-        // Mark bot_active = false and waiting_for_human
         await setInstagramSession(senderId, {
           step: 'human_takeover',
           customer_name: session.customer_name,
@@ -1051,65 +1304,59 @@ async function processIncomingInstagramMessage(senderId, text) {
         });
         return;
       }
+
+      // 6. Acknowledgment
+      const isAck = /^(ok|okay|thank\s*you|thanks|thx|sure|perfect|cool|got\s*it|great|k|alright|thumbs\s*up|👍|🙏|😊|❤️)$/i.test(normalizedText);
+      if (isAck) {
+        const ackMsg = `You're welcome, ${session.customer_name || 'there'}! Feel free to reach out anytime. 🚗✨`;
+        await sendInstagramReply(senderId, ackMsg);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', ackMsg);
+        return;
+      }
+
+      // 7. Greeting ("Hi", "Hello")
+      if (normalizedText === 'hi' || normalizedText === 'hello' || normalizedText === 'hey' || normalizedText.startsWith('hi ') || normalizedText.startsWith('hello ')) {
+        await setInstagramSession(senderId, {
+          ...session,
+          step: 'awaiting_reengagement_decision',
+        });
+        const reengageMsg =
+          `Welcome back, ${session.customer_name || 'friend'}! 🚗✨\n\n` +
+          `Would you like to explore another detailing service?`;
+        await sendInstagramReply(senderId, reengageMsg, { buttons: REENGAGE_BUTTONS });
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reengageMsg);
+        return;
+      }
+
+      // 8. Fallback: Never remain silent
+      const fallbackHelpMsg = `Can we help you with anything else, ${session.customer_name || 'friend'}? Tap an option below:`;
+      await sendInstagramReply(senderId, fallbackHelpMsg, { buttons: MORE_HELP_BUTTONS_P1 });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', fallbackHelpMsg);
+      return;
     }
 
     // State 1: Awaiting Service Selection (or brand new conversation)
     if (!session || session.step === 'awaiting_service') {
-      const matchedService = SERVICE_MAP[normalizedText];
+      await setInstagramSession(senderId, {
+        step: 'awaiting_service',
+      });
 
-      if (matchedService) {
-        // Save selected service and advance state
-        await setInstagramSession(senderId, {
-          step: 'awaiting_contact',
-          selected_service: matchedService,
-        });
-
-        const reply =
-          `Great choice! You selected: ${matchedService} 🚗\n\n` +
-          `To prepare your customized quote and check garage slot availability, please reply with your Name and Phone Number (e.g. Rahul Sharma, +91 98765 43210):`;
-        
-        await sendInstagramReply(senderId, reply);
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
-      } else {
-        // Send menu with native in-bubble Button Template cards
-        await setInstagramSession(senderId, {
-          step: 'awaiting_service',
-        });
-
-        const welcomeText = `Welcome to Signature Detailing 🚗✨\n\nWhich service are you interested in? Tap an option below:`;
-        await sendInstagramReply(senderId, welcomeText, { elements: ALL_SERVICES_GENERIC_ELEMENTS });
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeText);
-      }
+      const welcomeText = `Welcome to Signature Detailing 🚗✨\n\nWhich service are you interested in? Tap an option below:`;
+      await sendInstagramReply(senderId, welcomeText, { elements: ALL_SERVICES_GENERIC_ELEMENTS });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', welcomeText);
       return;
     }
 
     // State 2: Awaiting Name and Phone Number
     if (session.step === 'awaiting_contact') {
-      // 1. Check if customer tapped or sent another service button instead of contact info
-      const reselectedService = SERVICE_MAP[normalizedText];
-      if (reselectedService) {
-        await setInstagramSession(senderId, {
-          ...session,
-          selected_service: reselectedService,
-        });
-
-        const reply =
-          `Updated! You selected: ${reselectedService} 🚗\n\n` +
-          `Please reply with your Name and 10-digit Phone Number (e.g. Rahul Sharma, 98765 43210):`;
-
-        await sendInstagramReply(senderId, reply);
-        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
-        return;
-      }
-
-      // 2. Parse name and phone number
+      // 1. Parse name and phone number
       const { name, phone, hasValidPhone, hasIncompletePhone, incompleteDigits, inputDigits } = parseNameAndPhone(
         text,
         senderId,
         session.customer_name
       );
 
-      // 3. If NO valid 10-digit phone number was provided, do NOT create a lead in CRM
+      // 2. If NO valid 10-digit phone number was provided, do NOT create a lead in CRM
       if (!hasValidPhone) {
         if (name && !name.startsWith('Instagram User')) {
           await setInstagramSession(senderId, {
@@ -1140,7 +1387,7 @@ async function processIncomingInstagramMessage(senderId, text) {
 
       const selectedService = session.selected_service || 'Ceramic Coating';
 
-      // 4. Insert Lead into CRM leads table ONLY when a real valid phone number is present!
+      // 3. Insert Lead into CRM leads table ONLY when a real valid phone number is present!
       const { error: insertError } = await supabase.from('leads').insert([
         {
           name,

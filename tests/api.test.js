@@ -904,8 +904,91 @@ async function runTests() {
       'MORE_HELP_BUTTONS_P2 complies with Meta Button Template limits (max 3 buttons, <= 20 chars)'
     );
 
+    // Test 46: Service button tap while in awaiting_more_help updates lead & session
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: 'ig_test_more_help_user',
+      step: 'awaiting_more_help',
+      customer_name: 'Ankit',
+      selected_service: 'Ceramic Coating',
+      updated_at: new Date().toISOString(),
+    });
+
+    const moreHelpServiceTapRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_more_help_user' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                postback: { mid: 'mid_mhu_1', title: '🛡️ PPF', payload: '1' },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(moreHelpServiceTapRes.status === 200, 'Webhook handles service button tap in awaiting_more_help');
+
+    const { data: moreHelpSession } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_more_help_user')
+      .single();
+    assert(moreHelpSession.step === 'completed', 'Session transitions to completed on service tap in awaiting_more_help');
+    assert(moreHelpSession.selected_service === 'PPF', 'Selected service updated to PPF');
+
+    // Test 47: Service button tap during human_takeover reactivates bot
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: 'ig_test_takeover_user',
+      step: 'human_takeover',
+      customer_name: 'Vikas',
+      selected_service: 'PPF',
+      updated_at: new Date().toISOString(),
+    });
+
+    const takeoverServiceTapRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_takeover_user' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                postback: { mid: 'mid_tko_2', title: '✨ Ceramic Coating', payload: '2' },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(takeoverServiceTapRes.status === 200, 'Webhook handles service button tap during human_takeover');
+
+    const { data: takeoverSession } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_takeover_user')
+      .single();
+    assert(takeoverSession.step === 'completed', 'Bot reactivates from human_takeover and transitions to completed');
+    assert(takeoverSession.selected_service === 'Ceramic Coating', 'Selected service updated to Ceramic Coating');
+
     // Cleanup test sessions
-    await supabase.from('whatsapp_sessions').delete().in('phone', ['ig_test_return_user_01', 'ig_test_return_user_02']);
+    await supabase.from('whatsapp_sessions').delete().in('phone', [
+      'ig_test_return_user_01',
+      'ig_test_return_user_02',
+      'ig_test_more_help_user',
+      'ig_test_takeover_user',
+    ]);
 
     // Test 47: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
