@@ -740,6 +740,45 @@ export const configureInstagramIceBreakers = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Delete/clear Instagram Ice Breaker buttons from Meta profile
+ * @route   DELETE /api/inbox/instagram/icebreakers
+ * @access  Protected (Admin)
+ */
+export const deleteInstagramIceBreakers = asyncHandler(async (req, res) => {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    throw new ApiError(500, 'No Instagram Access Token configured');
+  }
+
+  try {
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? 'https://graph.instagram.com/v21.0/me/messenger_profile'
+      : 'https://graph.facebook.com/v21.0/me/messenger_profile';
+
+    const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform: 'instagram',
+        fields: ['ice_breakers'],
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new ApiError(400, data.error?.message || 'Failed to delete ice breakers on Meta');
+    }
+
+    return successResponse(res, { result: data.result }, 'Ice breakers deleted from Instagram profile successfully');
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, `Failed to delete ice breakers: ${err.message}`, err);
+  }
+});
+
+/**
  * @desc    Get recent Instagram post/reel comments and their auto-reply status
  * @route   GET /api/inbox/instagram/comments
  * @access  Protected (Admin)

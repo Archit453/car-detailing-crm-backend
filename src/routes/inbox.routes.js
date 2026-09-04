@@ -14,6 +14,7 @@ import {
   syncInstagramConversations,
   getInstagramIceBreakers,
   configureInstagramIceBreakers,
+  deleteInstagramIceBreakers,
   getInstagramComments,
   replyToInstagramComment,
   triggerInstagramCommentTestPing,
@@ -42,6 +43,7 @@ router.post('/instagram/test-ping', triggerInstagramTestPing);
 router.post('/instagram/sync', syncInstagramConversations);
 router.get('/instagram/icebreakers', getInstagramIceBreakers);
 router.post('/instagram/icebreakers', configureInstagramIceBreakers);
+router.delete('/instagram/icebreakers', deleteInstagramIceBreakers);
 
 // Instagram Post Comments Routes
 router.get('/instagram/comments', getInstagramComments);
