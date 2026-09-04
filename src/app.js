@@ -74,6 +74,11 @@ app.get('/coexistence', (req, res) => {
   res.sendFile(path.join(publicPath, 'coexistence.html'));
 });
 
+// Privacy Policy (Required for Meta App Review and Publishing)
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(publicPath, 'privacy.html'));
+});
+
 // Root Route - Base API status & index (with browser redirect to /dashboard)
 app.get('/', (req, res) => {
   if (req.accepts('html') && !req.accepts('json')) {
