@@ -366,7 +366,7 @@ export const getInstagramMessages = asyncHandler(async (req, res) => {
  */
 export const sendInstagramManualMessage = asyncHandler(async (req, res) => {
   assertConfigured();
-  const { senderId, message, customerName, quick_replies, buttons } = req.body || {};
+  const { senderId, message, customerName, quick_replies, buttons, elements } = req.body || {};
 
   if (!senderId || typeof senderId !== 'string') {
     throw new ApiError(400, 'Valid Instagram sender ID is required');
@@ -380,10 +380,11 @@ export const sendInstagramManualMessage = asyncHandler(async (req, res) => {
   const phoneKey = `ig_${cleanId}`;
   const trimmedMessage = message.trim();
 
-  // 1. Send via Meta Instagram Graph API (supports Quick Replies and Button Templates)
+  // 1. Send via Meta Instagram Graph API (supports Carousel Elements, Quick Replies and Button Templates)
   const sendResult = await sendInstagramOutboundMessage(cleanId, trimmedMessage, {
     quick_replies,
     buttons,
+    elements,
   });
 
   // If Meta API failed, DO NOT pretend success! Throw clear error so UI shows red toast!

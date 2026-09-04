@@ -2,6 +2,7 @@ import http from 'http';
 import app from '../src/app.js';
 import { SESSION_COOKIE_NAME } from '../src/utils/session.js';
 import {
+  ALL_SERVICES_GENERIC_ELEMENTS,
   SERVICE_BUTTONS_P1,
   SERVICE_BUTTONS_P2,
   REENGAGE_BUTTONS,
@@ -790,7 +791,37 @@ async function runTests() {
       .single();
     assert(returnSessionNothing.step === 'human_takeover', 'Selecting Nothing Else sets step to human_takeover');
 
-    // Test 46: Native In-Bubble Button Template Constraints
+    // Test 46: ALL_SERVICES_GENERIC_ELEMENTS Carousel Template Constraints
+    assert(
+      Array.isArray(ALL_SERVICES_GENERIC_ELEMENTS) &&
+      ALL_SERVICES_GENERIC_ELEMENTS.length === 2,
+      'ALL_SERVICES_GENERIC_ELEMENTS contains exactly 2 carousel element cards'
+    );
+
+    const totalServiceButtons = ALL_SERVICES_GENERIC_ELEMENTS.reduce(
+      (acc, card) => acc + (card.buttons?.length || 0),
+      0
+    );
+    assert(
+      totalServiceButtons === 5,
+      'ALL_SERVICES_GENERIC_ELEMENTS delivers all 5 detailing service buttons'
+    );
+
+    assert(
+      ALL_SERVICES_GENERIC_ELEMENTS.every(
+        (card) =>
+          card.title &&
+          card.title.length <= 80 &&
+          card.subtitle &&
+          card.subtitle.length <= 80 &&
+          Array.isArray(card.buttons) &&
+          card.buttons.length <= 3 &&
+          card.buttons.every((b) => b.type === 'postback' && b.title.length <= 20)
+      ),
+      'ALL_SERVICES_GENERIC_ELEMENTS strictly complies with Meta Generic Template limits'
+    );
+
+    // Test 47: Native In-Bubble Button Template Constraints
     assert(
       Array.isArray(SERVICE_BUTTONS_P1) &&
       SERVICE_BUTTONS_P1.length <= 3 &&

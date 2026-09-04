@@ -2116,7 +2116,13 @@ function renderInstagramMessageThread() {
         rawText.includes('Which additional service would you like to explore') ||
         rawText.includes('Which detailing package can we help you with')
       ) {
-        buttonPreviewHtml = renderInBubbleButtons(['🛡️ PPF', '✨ Ceramic Coating', '🚘 Paint Correction']);
+        buttonPreviewHtml = renderInBubbleButtons([
+          '🛡️ PPF',
+          '✨ Ceramic Coating',
+          '🚘 Paint Correction',
+          '🧼 Interior Detail',
+          '🏎️ Full Detailing',
+        ]);
       } else if (rawText.includes('Would you like to explore another detailing service?')) {
         buttonPreviewHtml = renderInBubbleButtons(['✅ Yes', '❌ No']);
       } else if (rawText.includes('connect directly / finish')) {
@@ -2412,7 +2418,7 @@ window.triggerInstagramTestPing = triggerInstagramTestPing;
 window.syncInstagramFromMeta = syncInstagramFromMeta;
 
 /**
- * Send 5 Interactive Service Quick Reply Buttons to customer on Instagram
+ * Send all 5 Interactive Detailing Services to customer on Instagram via Carousel Cards
  */
 async function handleSendServiceButtons() {
   if (!state.instagramInbox.activeSenderId) {
@@ -2423,29 +2429,31 @@ async function handleSendServiceButtons() {
   const senderId = state.instagramInbox.activeSenderId;
   const customerName = state.instagramInbox.activeCustomerName;
 
-  const card1Buttons = [
-    { type: 'postback', title: '🛡️ PPF', payload: '1' },
-    { type: 'postback', title: '✨ Ceramic Coating', payload: '2' },
-    { type: 'postback', title: '🚘 Paint Correction', payload: '3' },
-  ];
-
-  const card2Buttons = [
-    { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
-    { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+  const allServicesElements = [
+    {
+      title: '🚗 Detailing Packages (1/2)',
+      subtitle: 'Exterior Paint Protection & Correction',
+      buttons: [
+        { type: 'postback', title: '🛡️ PPF', payload: '1' },
+        { type: 'postback', title: '✨ Ceramic Coating', payload: '2' },
+        { type: 'postback', title: '🚘 Paint Correction', payload: '3' },
+      ],
+    },
+    {
+      title: '🚗 Detailing Packages (2/2)',
+      subtitle: 'Interior Deep Clean & Full Detailing',
+      buttons: [
+        { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
+        { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+      ],
+    },
   ];
 
   await dispatchInstagramButtonMessage(
     senderId,
     customerName,
     'Which service are you interested in? Tap an option below:',
-    { buttons: card1Buttons }
-  );
-
-  await dispatchInstagramButtonMessage(
-    senderId,
-    customerName,
-    'Or choose from our interior & complete packages 👇',
-    { buttons: card2Buttons }
+    { elements: allServicesElements }
   );
 }
 
@@ -2507,6 +2515,7 @@ async function dispatchInstagramButtonMessage(senderId, customerName, text, opti
         message: text,
         quick_replies: options.quick_replies,
         buttons: options.buttons,
+        elements: options.elements,
       }),
     });
 
