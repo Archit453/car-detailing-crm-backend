@@ -34,6 +34,8 @@ const WELCOME_TEXT =
   `Which service are you interested in?\n\n` +
   `Tap a button below or reply with 1, 2, 3, 4, or 5:`;
 
+export const WEBSITE_URL = 'https://weekly-steps-579379.framer.app/';
+
 // Native In-Bubble Button Templates (Meta limit: 3 buttons per bubble, <= 20 chars per title)
 export const ALL_SERVICES_GENERIC_ELEMENTS = [
   {
@@ -51,6 +53,7 @@ export const ALL_SERVICES_GENERIC_ELEMENTS = [
     buttons: [
       { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
       { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+      { type: 'web_url', url: WEBSITE_URL, title: '🌐 Visit Website' },
     ],
   },
 ];
@@ -78,6 +81,7 @@ export const MORE_HELP_BUTTONS_P1 = [
 ];
 
 export const MORE_HELP_BUTTONS_P2 = [
+  { type: 'web_url', url: WEBSITE_URL, title: '🌐 Visit Website' },
   { type: 'postback', title: '💬 WhatsApp Support', payload: 'MORE_WHATSAPP' },
   { type: 'postback', title: '❌ Nothing Else', payload: 'MORE_NOTHING' },
 ];
@@ -413,15 +417,50 @@ export async function processIncomingInstagramComment(commentData) {
 }
 
 /**
+ * In-memory Deduplication Cache for Instagram Inbound Messages
+ */
+const processedMessageIds = new Map();
+
+export function isDuplicateInstagramMessage(mid, senderId, text) {
+  const now = Date.now();
+  // Prune entries older than 5 minutes (300,000 ms)
+  for (const [key, timestamp] of processedMessageIds.entries()) {
+    if (now - timestamp > 300000) {
+      processedMessageIds.delete(key);
+    }
+  }
+
+  // Deduplicate by Meta's unique message ID (mid)
+  if (mid && typeof mid === 'string') {
+    if (processedMessageIds.has(mid)) {
+      return true;
+    }
+    processedMessageIds.set(mid, now);
+    return false;
+  }
+
+  // Deduplicate by sender + clean text within 5 seconds window
+  const fallbackKey = `${senderId}_${String(text || '').trim().toLowerCase()}`;
+  const lastTime = processedMessageIds.get(fallbackKey);
+  if (lastTime && now - lastTime < 5000) {
+    return true;
+  }
+  processedMessageIds.set(fallbackKey, now);
+  return false;
+}
+
+/**
  * Parses customer name and phone from freeform text input
  */
-function parseNameAndPhone(input, fallbackId, existingName = null) {
+export function parseNameAndPhone(input, fallbackId, existingName = null) {
   const cleanInput = input.trim();
 
   // Extract phone number (standard mobile patterns: optional +, 10-15 digits with optional spaces/hyphens)
   const phoneMatch = cleanInput.match(/(\+?[0-9][0-9\s-]{8,14}[0-9])/);
   let phone = null;
   let hasValidPhone = false;
+  let hasIncompletePhone = false;
+  let incompleteDigits = 0;
 
   if (phoneMatch) {
     const rawPhone = phoneMatch[0].trim().replace(/\s+/g, '');
@@ -432,21 +471,39 @@ function parseNameAndPhone(input, fallbackId, existingName = null) {
     }
   }
 
-  // Extract name by removing the matched phone part
+  // Also check if input contains an incomplete phone number (e.g. 4-9 digits)
+  const allDigits = cleanInput.replace(/\D/g, '');
+  if (!hasValidPhone && allDigits.length >= 4 && allDigits.length < 10) {
+    hasIncompletePhone = true;
+    incompleteDigits = allDigits.length;
+  }
+
+  // Extract name:
+  // Strip out phone match or ANY sequence of digits, plus common punctuation
   let extractedName = cleanInput
     .replace(phoneMatch ? phoneMatch[0] : '', '')
-    .replace(/[,:/\-()]/g, ' ')
+    .replace(/\+?[0-9\s-]{4,}/g, '')
+    .replace(/[0-9]/g, '')
+    .replace(/[,:/\-()_!]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   // Determine cleanest customer name
   let name = existingName;
-  if (extractedName.length >= 2 && !/^\d+$/.test(extractedName)) {
+  if (extractedName.length >= 2 && /[a-zA-Z\u0900-\u097F]/.test(extractedName)) {
     name = extractedName;
   } else if (!name) {
     name = `Instagram User (${fallbackId.slice(-4)})`;
   }
 
-  return { name, phone, hasValidPhone };
+  return {
+    name,
+    phone,
+    hasValidPhone,
+    hasIncompletePhone,
+    incompleteDigits,
+    inputDigits: allDigits,
+  };
 }
 
 /**
@@ -498,6 +555,8 @@ export const handleInstagramMessage = async (req, res) => {
   // Iterate over each entry
   if (Array.isArray(body.entry)) {
     for (const entry of body.entry) {
+      let messagingProcessed = false;
+
       // 1. Standard Messenger/Instagram format (entry.messaging)
       if (Array.isArray(entry.messaging)) {
         for (const event of entry.messaging) {
@@ -510,15 +569,28 @@ export const handleInstagramMessage = async (req, res) => {
             continue;
           }
 
+          const mid = event.message?.mid;
+
           // Inbound direct message (supports Quick Reply button taps)
           if (event.message) {
             const buttonPayload = event.message.quick_reply?.payload;
             const messageText = buttonPayload || event.message.text || '';
+            if (isDuplicateInstagramMessage(mid, senderId, messageText)) {
+              console.log(`[Instagram Webhook] Ignored duplicate message in entry.messaging: ${mid || messageText}`);
+              continue;
+            }
+            messagingProcessed = true;
             await processIncomingInstagramMessage(senderId, messageText);
           }
           // Postback event (supports Button Template taps & Ice Breaker clicks)
           else if (event.postback) {
             const buttonPayload = event.postback.payload || event.postback.title || '';
+            const postbackMid = event.postback.mid || mid;
+            if (isDuplicateInstagramMessage(postbackMid, senderId, buttonPayload)) {
+              console.log(`[Instagram Webhook] Ignored duplicate postback in entry.messaging: ${postbackMid || buttonPayload}`);
+              continue;
+            }
+            messagingProcessed = true;
             await processIncomingInstagramMessage(senderId, buttonPayload);
           }
         }
@@ -538,11 +610,24 @@ export const handleInstagramMessage = async (req, res) => {
               continue;
             }
 
+            // If entry.messaging was already processed in this entry, skip to prevent double processing
+            if (messagingProcessed) {
+              console.log('[Instagram Webhook] Skipped message in entry.changes (already processed in entry.messaging)');
+              continue;
+            }
+
             const buttonPayload =
               val.message?.quick_reply?.payload ||
               val.postback?.payload ||
               val.postback?.title;
             const text = buttonPayload || val.message?.text || val.text || '';
+            const mid = val.message?.mid || val.id;
+
+            if (isDuplicateInstagramMessage(mid, senderId, text)) {
+              console.log(`[Instagram Webhook] Ignored duplicate message in entry.changes: ${mid || text}`);
+              continue;
+            }
+
             if (senderId && text) {
               await processIncomingInstagramMessage(senderId, text);
             }
@@ -671,13 +756,50 @@ async function processIncomingInstagramMessage(senderId, text) {
       return;
     }
 
+    // Website / About us / Landing page inquiry
+    if (
+      normalizedText === 'website' ||
+      normalizedText === 'site' ||
+      normalizedText === 'web' ||
+      normalizedText === 'link' ||
+      normalizedText.includes('website') ||
+      normalizedText.includes('landing page') ||
+      normalizedText.includes('about us') ||
+      normalizedText.includes('who are you') ||
+      normalizedText.includes('portfolio') ||
+      normalizedText.includes('gallery')
+    ) {
+      const websiteMsg =
+        `Explore Creation Auto Detailing online 🚗✨\n\n` +
+        `Visit our official website to view our latest vehicle transformations, detailing packages, customer reviews, and studio gallery:\n` +
+        `🌐 ${WEBSITE_URL}`;
+
+      const websiteButtons = [
+        {
+          type: 'web_url',
+          url: WEBSITE_URL,
+          title: '🌐 Visit Website',
+        },
+        {
+          type: 'postback',
+          title: '🚗 View Services',
+          payload: 'menu',
+        },
+      ];
+
+      await sendInstagramReply(senderId, websiteMsg, { buttons: websiteButtons });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', websiteMsg);
+      return;
+    }
+
     // Location inquiry (e.g. from Ice Breaker button "📍 Location & Visit")
     if (normalizedText === 'location' || normalizedText.includes('location') || normalizedText.includes('where')) {
       const locationText =
         `📍 Creation Auto Detailing Studio\n\n` +
         `🏢 Address: Studio 4, Detailing Bay Road, Automobile Hub, India\n` +
         `⏰ Hours: Mon-Sat 9:30 AM - 8:00 PM\n` +
-        `📞 Phone: +91 98765 43210\n\n` +
+        `📞 Phone: +91 98765 43210\n` +
+        `🌐 Website: ${WEBSITE_URL}\n\n` +
         `Which service can we assist you with today? Tap an option below:`;
       await sendInstagramReply(senderId, locationText, { elements: ALL_SERVICES_GENERIC_ELEMENTS });
       await logInstagramMessage(senderId, customerName, 'outbound', 'bot', locationText);
@@ -686,6 +808,16 @@ async function processIncomingInstagramMessage(senderId, text) {
 
     // State: Completed - Customer previously submitted contact details
     if (session && session.step === 'completed') {
+      const digitsOnly = text.replace(/\D/g, '');
+
+      // Guard: If customer sent a phone number again (or duplicate phone message webhook)
+      if (digitsOnly.length >= 8) {
+        const phoneAck = `Thank you ${session.customer_name || ''}! We already have your contact details on file and our detailing team will reach out shortly. 🚗✨`;
+        await sendInstagramReply(senderId, phoneAck);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', phoneAck);
+        return;
+      }
+
       const isAck = /^(ok|okay|thank\s*you|thanks|thx|sure|perfect|cool|got\s*it|great|k|alright|thumbs\s*up|👍|🙏|😊|❤️)$/i.test(normalizedText);
       if (isAck) {
         const ackMsg = `You're welcome, ${session.customer_name || 'there'}! We look forward to working on your vehicle at Creation Detailing. 🚗✨`;
@@ -971,7 +1103,11 @@ async function processIncomingInstagramMessage(senderId, text) {
       }
 
       // 2. Parse name and phone number
-      const { name, phone, hasValidPhone } = parseNameAndPhone(text, senderId, session.customer_name);
+      const { name, phone, hasValidPhone, hasIncompletePhone, incompleteDigits, inputDigits } = parseNameAndPhone(
+        text,
+        senderId,
+        session.customer_name
+      );
 
       // 3. If NO valid 10-digit phone number was provided, do NOT create a lead in CRM
       if (!hasValidPhone) {
@@ -984,9 +1120,18 @@ async function processIncomingInstagramMessage(senderId, text) {
 
         const selectedService = session.selected_service || 'Detailing Service';
         const displayName = name && !name.startsWith('Instagram User') ? ` ${name}` : '';
-        const promptPhoneMsg =
-          `Thanks${displayName}! 🏎️\n\n` +
-          `To prepare your customized quote for ${selectedService}, please reply with your 10-digit mobile phone number (e.g. 98765 43210):`;
+        let promptPhoneMsg;
+
+        if (hasIncompletePhone) {
+          promptPhoneMsg =
+            `Thanks${displayName}! 🏎️\n\n` +
+            `The phone number entered (${inputDigits}) seems incomplete (${incompleteDigits} digits).\n` +
+            `Please reply with your full 10-digit mobile phone number (e.g. 98765 43210):`;
+        } else {
+          promptPhoneMsg =
+            `Thanks${displayName}! 🏎️\n\n` +
+            `To prepare your customized quote for ${selectedService}, please reply with your 10-digit mobile phone number (e.g. 98765 43210):`;
+        }
 
         await sendInstagramReply(senderId, promptPhoneMsg);
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', promptPhoneMsg);
@@ -1019,13 +1164,28 @@ async function processIncomingInstagramMessage(senderId, text) {
         selected_service: selectedService,
       });
 
-      // Send confirmation message to customer
+      // Send confirmation message to customer with website button
       const confirmationMsg =
         `Thank you ${name}! 🏎️\n\n` +
         `Our detailing specialists have received your inquiry for ${selectedService}.\n` +
-        `We will reach out to you on ${phone} shortly with quotation details and garage slot timings!`;
+        `We will reach out to you on ${phone} shortly with quotation details and garage slot timings!\n\n` +
+        `Explore our studio transformations & website:\n` +
+        `🌐 ${WEBSITE_URL}`;
 
-      await sendInstagramReply(senderId, confirmationMsg);
+      const confirmButtons = [
+        {
+          type: 'web_url',
+          url: WEBSITE_URL,
+          title: '🌐 Visit Website',
+        },
+        {
+          type: 'web_url',
+          url: 'https://wa.me/919876543210?text=Hi%20Signature%20Detailing,%20I%20inquired%20for%20' + encodeURIComponent(selectedService),
+          title: 'Chat on WhatsApp 💬',
+        },
+      ];
+
+      await sendInstagramReply(senderId, confirmationMsg, { buttons: confirmButtons });
       await logInstagramMessage(senderId, name || customerName, 'outbound', 'bot', confirmationMsg);
     }
   } catch (err) {

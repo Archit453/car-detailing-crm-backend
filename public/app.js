@@ -2126,7 +2126,7 @@ function renderInstagramMessageThread() {
       } else if (rawText.includes('Would you like to explore another detailing service?')) {
         buttonPreviewHtml = renderInBubbleButtons(['✅ Yes', '❌ No']);
       } else if (rawText.includes('connect directly / finish')) {
-        buttonPreviewHtml = renderInBubbleButtons(['💬 WhatsApp Support', '❌ Nothing Else']);
+        buttonPreviewHtml = renderInBubbleButtons(['🌐 Visit Website', '💬 WhatsApp Support', '❌ Nothing Else']);
       } else if (rawText.includes('Address: Studio 4')) {
         buttonPreviewHtml = renderInBubbleButtons(['💰 Pricing Packages', '📞 Request Callback', '❌ Nothing Else']);
       } else if (rawText.includes('Packages Overview') || rawText.includes('Creation Detailing Packages')) {
@@ -2137,6 +2137,8 @@ function renderInstagramMessageThread() {
         buttonPreviewHtml = renderInBubbleButtons(['Chat on WhatsApp 💬', '❌ Nothing Else']);
       } else if (rawText.includes('Can we help you with anything else?')) {
         buttonPreviewHtml = renderInBubbleButtons(['📍 Studio Location', '💰 Pricing Packages', '📞 Request Callback']);
+      } else if (rawText.includes('Explore Creation Auto Detailing online') || rawText.includes('Explore our studio transformations & website')) {
+        buttonPreviewHtml = renderInBubbleButtons(['🌐 Visit Website', 'Chat on WhatsApp 💬']);
       } else if (
         rawText.includes('Connect directly with our senior detailing specialist') ||
         rawText.includes('Chat on WhatsApp')
@@ -2445,6 +2447,7 @@ async function handleSendServiceButtons() {
       buttons: [
         { type: 'postback', title: '🧼 Interior Detail', payload: '4' },
         { type: 'postback', title: '🏎️ Full Detailing', payload: '5' },
+        { type: 'web_url', url: 'https://weekly-steps-579379.framer.app/', title: '🌐 Visit Website' },
       ],
     },
   ];

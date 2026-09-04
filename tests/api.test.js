@@ -2,12 +2,15 @@ import http from 'http';
 import app from '../src/app.js';
 import { SESSION_COOKIE_NAME } from '../src/utils/session.js';
 import {
+  WEBSITE_URL,
   ALL_SERVICES_GENERIC_ELEMENTS,
   SERVICE_BUTTONS_P1,
   SERVICE_BUTTONS_P2,
   REENGAGE_BUTTONS,
   MORE_HELP_BUTTONS_P1,
   MORE_HELP_BUTTONS_P2,
+  parseNameAndPhone,
+  isDuplicateInstagramMessage,
 } from '../src/controllers/instagram.controller.js';
 
 async function runTests() {
@@ -791,7 +794,7 @@ async function runTests() {
       .single();
     assert(returnSessionNothing.step === 'human_takeover', 'Selecting Nothing Else sets step to human_takeover');
 
-    // Test 46: ALL_SERVICES_GENERIC_ELEMENTS Carousel Template Constraints
+    // Test 46: ALL_SERVICES_GENERIC_ELEMENTS Carousel Template Constraints & Website Link
     assert(
       Array.isArray(ALL_SERVICES_GENERIC_ELEMENTS) &&
       ALL_SERVICES_GENERIC_ELEMENTS.length === 2,
@@ -803,9 +806,14 @@ async function runTests() {
       0
     );
     assert(
-      totalServiceButtons === 5,
-      'ALL_SERVICES_GENERIC_ELEMENTS delivers all 5 detailing service buttons'
+      totalServiceButtons === 6,
+      'ALL_SERVICES_GENERIC_ELEMENTS delivers all 5 detailing service buttons plus website link button'
     );
+
+    const hasWebsiteButton = ALL_SERVICES_GENERIC_ELEMENTS.some((card) =>
+      card.buttons?.some((b) => b.type === 'web_url' && b.url === WEBSITE_URL && b.title === '🌐 Visit Website')
+    );
+    assert(hasWebsiteButton, 'ALL_SERVICES_GENERIC_ELEMENTS includes official landing page website button');
 
     assert(
       ALL_SERVICES_GENERIC_ELEMENTS.every(
@@ -816,12 +824,51 @@ async function runTests() {
           card.subtitle.length <= 80 &&
           Array.isArray(card.buttons) &&
           card.buttons.length <= 3 &&
-          card.buttons.every((b) => b.type === 'postback' && b.title.length <= 20)
+          card.buttons.every((b) => (b.type === 'postback' || b.type === 'web_url') && b.title.length <= 20)
       ),
       'ALL_SERVICES_GENERIC_ELEMENTS strictly complies with Meta Generic Template limits'
     );
 
-    // Test 47: Native In-Bubble Button Template Constraints
+    // Test 47: Edge Case Name & Phone Parsing
+    const parsedAexIncomplete = parseNameAndPhone('Aex, 16372711', '1234');
+    assert(
+      parsedAexIncomplete.name === 'Aex' &&
+      parsedAexIncomplete.hasValidPhone === false &&
+      parsedAexIncomplete.hasIncompletePhone === true,
+      'parseNameAndPhone cleans numbers from name "Aex, 16372711" -> name: "Aex", hasValidPhone: false'
+    );
+
+    const parsedDigitsOnly = parseNameAndPhone('017472837', '1234', 'Aex');
+    assert(
+      parsedDigitsOnly.name === 'Aex' &&
+      parsedDigitsOnly.hasValidPhone === false &&
+      parsedDigitsOnly.hasIncompletePhone === true,
+      'parseNameAndPhone preserves existing name when only incomplete phone digits are sent'
+    );
+
+    const parsedValidTenDigits = parseNameAndPhone('8392748273', '1234', 'Aex');
+    assert(
+      parsedValidTenDigits.name === 'Aex' &&
+      parsedValidTenDigits.phone === '8392748273' &&
+      parsedValidTenDigits.hasValidPhone === true,
+      'parseNameAndPhone accepts 10-digit phone "8392748273" with existing name "Aex"'
+    );
+
+    const parsedFullNameAndPhone = parseNameAndPhone('Rahul Sharma, +91 98765 43210', '1234');
+    assert(
+      parsedFullNameAndPhone.name === 'Rahul Sharma' &&
+      parsedFullNameAndPhone.hasValidPhone === true,
+      'parseNameAndPhone extracts full name "Rahul Sharma" and phone "+919876543210"'
+    );
+
+    // Test 48: Inbound Message Deduplication Cache
+    const testMid = 'test_mid_unique_998877';
+    const isFirstTime = isDuplicateInstagramMessage(testMid, 'user_test', 'hi');
+    const isSecondTime = isDuplicateInstagramMessage(testMid, 'user_test', 'hi');
+    assert(isFirstTime === false, 'isDuplicateInstagramMessage returns false on first occurrence of MID');
+    assert(isSecondTime === true, 'isDuplicateInstagramMessage returns true on duplicate occurrence of MID');
+
+    // Test 49: Native In-Bubble Button Template Constraints
     assert(
       Array.isArray(SERVICE_BUTTONS_P1) &&
       SERVICE_BUTTONS_P1.length <= 3 &&
