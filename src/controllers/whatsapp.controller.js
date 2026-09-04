@@ -352,9 +352,14 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     profileName = req.body.data.name || req.body.data.sender_name || '';
     phoneNumberId = config.whatsapp.phoneNumberId;
   } else if (req.body.From && req.body.Body) {
+  } else if (req.body.From || req.body.from) {
     // Twilio Webhook Format
     fromNumber = req.body.From.replace('whatsapp:', '').trim();
     incomingText = req.body.Body.trim();
+    isMeta = false;
+    fromNumber = (req.body.From || req.body.from || '').replace('whatsapp:', '').trim();
+    incomingText = (req.body.Body || req.body.body || req.body.ButtonPayload || req.body.Payload || '').trim() || 'menu';
+    profileName = req.body.ProfileName || req.body.profileName || '';
   } else {
     // Return 200 to acknowledge other webhook events (e.g. read receipts / delivery statuses)
     return res.status(200).json({ status: 'ignored' });
