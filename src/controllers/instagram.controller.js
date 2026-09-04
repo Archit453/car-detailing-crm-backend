@@ -120,6 +120,44 @@ export const handleInstagramMessage = async (req, res) => {
   return res.status(200).json({ status: 'EVENT_RECEIVED' });
 };
 
+const inMemoryInstagramSessions = new Map();
+
+async function getInstagramSession(senderId) {
+  try {
+    const { data, error } = await supabase
+      .from('instagram_sessions')
+      .select('*')
+      .eq('sender_id', senderId)
+      .single();
+    if (!error && data) return data;
+  } catch (err) {
+    // fallback
+  }
+  return inMemoryInstagramSessions.get(senderId) || null;
+}
+
+async function setInstagramSession(senderId, sessionData) {
+  inMemoryInstagramSessions.set(senderId, sessionData);
+  try {
+    await supabase.from('instagram_sessions').upsert({
+      sender_id: senderId,
+      ...sessionData,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    // silently fallback to memory
+  }
+}
+
+async function deleteInstagramSession(senderId) {
+  inMemoryInstagramSessions.delete(senderId);
+  try {
+    await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
+  } catch (err) {
+    // silently fallback
+  }
+}
+
 /**
  * Process single user message with multi-turn session state
  */
@@ -142,10 +180,12 @@ async function processIncomingInstagramMessage(senderId, text) {
       .select('*')
       .eq('sender_id', senderId)
       .single();
+    const session = await getInstagramSession(senderId);
 
     // Reset command
     if (normalizedText === 'reset' || normalizedText === 'start' || normalizedText === 'menu') {
       await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
+      await deleteInstagramSession(senderId);
       await sendInstagramReply(senderId, WELCOME_TEXT);
       return;
     }
@@ -164,6 +204,10 @@ async function processIncomingInstagramMessage(senderId, text) {
             selected_service: matchedService,
             updated_at: new Date().toISOString(),
           });
+        await setInstagramSession(senderId, {
+          step: 'awaiting_contact',
+          selected_service: matchedService,
+        });
 
         const reply =
           `Great choice! You selected: ${matchedService} 🚗\n\n` +
@@ -179,6 +223,9 @@ async function processIncomingInstagramMessage(senderId, text) {
             step: 'awaiting_service',
             updated_at: new Date().toISOString(),
           });
+        await setInstagramSession(senderId, {
+          step: 'awaiting_service',
+        });
 
         await sendInstagramReply(senderId, WELCOME_TEXT);
       }
@@ -209,6 +256,7 @@ async function processIncomingInstagramMessage(senderId, text) {
 
       // Clear session after successful lead capture
       await supabase.from('instagram_sessions').delete().eq('sender_id', senderId);
+      await deleteInstagramSession(senderId);
 
       // Send confirmation message to customer
       const confirmationMsg =
