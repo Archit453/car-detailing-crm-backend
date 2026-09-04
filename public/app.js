@@ -48,14 +48,25 @@ const state = {
     loading: false,
     searchQuery: '',
   },
+  instagramInbox: {
+    conversations: [],
+    activeSenderId: null,
+    activeCustomerName: '',
+    messages: [],
+    loading: false,
+    searchQuery: '',
+    botPaused: false,
+  },
 };
 
 // DOM Elements
 const elements = {
   // Primary Top Navigation
   navBtnInbox: document.getElementById('nav-btn-inbox'),
+  navBtnInstagram: document.getElementById('nav-btn-instagram'),
   mainNavLeads: document.getElementById('main-nav-leads'),
   mainNavInbox: document.getElementById('main-nav-inbox'),
+  mainNavInstagram: document.getElementById('main-nav-instagram'),
 
   // KPI Stats
   statTotal: document.getElementById('stat-total'),
@@ -64,6 +75,8 @@ const elements = {
   statCompleted: document.getElementById('stat-completed'),
   statWhatsapp: document.getElementById('stat-whatsapp'),
   statWebsite: document.getElementById('stat-website'),
+  statInstagram: document.getElementById('stat-instagram'),
+  cardMetricInstagram: document.getElementById('card-metric-instagram'),
 
   // Filters & Controls
   searchInput: document.getElementById('search-input'),
@@ -78,9 +91,11 @@ const elements = {
   viewToggleTable: document.getElementById('view-toggle-table'),
   viewToggleKanban: document.getElementById('view-toggle-kanban'),
   viewToggleInbox: document.getElementById('view-toggle-inbox'),
+  viewToggleInstagram: document.getElementById('view-toggle-instagram'),
   tableViewContainer: document.getElementById('table-view-container'),
   kanbanViewContainer: document.getElementById('kanban-view-container'),
   inboxViewContainer: document.getElementById('inbox-view-container'),
+  instagramInboxViewContainer: document.getElementById('instagram-inbox-view-container'),
   leadsTableBody: document.getElementById('leads-table-body'),
   leadsMobileList: document.getElementById('leads-mobile-list'),
   paginationInfo: document.getElementById('table-pagination-info'),
@@ -115,6 +130,48 @@ const elements = {
   formInboxSend: document.getElementById('form-inbox-send'),
   inboxInputMessage: document.getElementById('inbox-input-message'),
   btnInboxSend: document.getElementById('btn-inbox-send'),
+
+  // Instagram Inbox Elements
+  instagramSidebar: document.getElementById('instagram-sidebar'),
+  instagramChatPane: document.getElementById('instagram-chat-pane'),
+  instagramConversationList: document.getElementById('instagram-conversation-list'),
+  instagramSearchInput: document.getElementById('instagram-search-input'),
+  btnRefreshInstagramInbox: document.getElementById('btn-refresh-instagram-inbox'),
+  btnInstagramBack: document.getElementById('btn-instagram-back'),
+  instagramHeaderAvatar: document.getElementById('instagram-header-avatar'),
+  instagramHeaderName: document.getElementById('instagram-header-name'),
+  instagramHeaderId: document.getElementById('instagram-header-id'),
+  instagramHeaderActions: document.getElementById('instagram-header-actions'),
+  btnIgBotActive: document.getElementById('btn-ig-bot-active'),
+  btnIgBotInactive: document.getElementById('btn-ig-bot-inactive'),
+  dotIgBotActive: document.getElementById('dot-ig-bot-active'),
+  dotIgBotInactive: document.getElementById('dot-ig-bot-inactive'),
+  instagramHumanBanner: document.getElementById('instagram-human-banner'),
+  btnResumeIgBotBanner: document.getElementById('btn-resume-ig-bot-banner'),
+  instagramMessagesContainer: document.getElementById('instagram-messages-container'),
+  instagramQuickTemplates: document.getElementById('instagram-quick-templates'),
+  instagramComposerBar: document.getElementById('instagram-composer-bar'),
+  igComposerBotStatusBadge: document.getElementById('ig-composer-bot-status-badge'),
+  btnIgComposerBotActive: document.getElementById('btn-ig-composer-bot-active'),
+  btnIgComposerBotInactive: document.getElementById('btn-ig-composer-bot-inactive'),
+  formInstagramSend: document.getElementById('form-instagram-send'),
+  instagramInputMessage: document.getElementById('instagram-input-message'),
+  btnInstagramSend: document.getElementById('btn-instagram-send'),
+  igWebhookBadge: document.getElementById('ig-webhook-badge'),
+  igDiagnosticLastEvent: document.getElementById('ig-diagnostic-last-event'),
+  igConversationCount: document.getElementById('ig-conversation-count'),
+  btnIgTestPing: document.getElementById('btn-ig-test-ping'),
+  btnIgCheckStatus: document.getElementById('btn-ig-check-status'),
+  btnIgSync: document.getElementById('btn-ig-sync'),
+
+  // Instagram Diagnostics Modal
+  modalIgDiagnostics: document.getElementById('modal-ig-diagnostics'),
+  btnCloseIgDiagnostics: document.getElementById('btn-close-ig-diagnostics'),
+  igDiagTokenStatus: document.getElementById('ig-diag-token-status'),
+  igDiagTokenPrefix: document.getElementById('ig-diag-token-prefix'),
+  igDiagEventTime: document.getElementById('ig-diag-event-time'),
+  igRawEventJson: document.getElementById('ig-raw-event-json'),
+  btnModalTestPing: document.getElementById('btn-modal-test-ping'),
 
   // Kanban Columns
   kanbanCols: {
@@ -226,6 +283,9 @@ function setupEventListeners() {
   if (elements.viewToggleInbox) {
     elements.viewToggleInbox.addEventListener('click', () => switchView('inbox'));
   }
+  if (elements.viewToggleInstagram) {
+    elements.viewToggleInstagram.addEventListener('click', () => switchView('instagram'));
+  }
 
   // Inbox Event Listeners
   if (elements.btnRefreshInbox) {
@@ -270,15 +330,85 @@ function setupEventListeners() {
   if (elements.navBtnInbox) {
     elements.navBtnInbox.addEventListener('click', () => switchView('inbox'));
   }
+  if (elements.navBtnInstagram) {
+    elements.navBtnInstagram.addEventListener('click', () => switchView('instagram'));
+  }
   if (elements.mainNavLeads) {
     elements.mainNavLeads.addEventListener('click', () => switchView('table'));
   }
   if (elements.mainNavInbox) {
     elements.mainNavInbox.addEventListener('click', () => switchView('inbox'));
   }
+  if (elements.mainNavInstagram) {
+    elements.mainNavInstagram.addEventListener('click', () => switchView('instagram'));
+  }
   const cardMetricWhatsapp = document.getElementById('card-metric-whatsapp');
   if (cardMetricWhatsapp) {
     cardMetricWhatsapp.addEventListener('click', () => switchView('inbox'));
+  }
+  if (elements.cardMetricInstagram) {
+    elements.cardMetricInstagram.addEventListener('click', () => switchView('instagram'));
+  }
+
+  // Instagram Inbox Event Listeners
+  if (elements.btnRefreshInstagramInbox) {
+    elements.btnRefreshInstagramInbox.addEventListener('click', () => fetchInstagramConversations());
+  }
+  if (elements.instagramSearchInput) {
+    elements.instagramSearchInput.addEventListener('input', (e) => {
+      state.instagramInbox.searchQuery = e.target.value.toLowerCase().trim();
+      renderInstagramConversationsList();
+    });
+  }
+  if (elements.formInstagramSend) {
+    elements.formInstagramSend.addEventListener('submit', handleInstagramSend);
+  }
+  if (elements.btnInstagramBack) {
+    elements.btnInstagramBack.addEventListener('click', handleInstagramBack);
+  }
+  if (elements.instagramQuickTemplates) {
+    elements.instagramQuickTemplates.addEventListener('click', (e) => {
+      const btn = e.target.closest('.ig-quick-reply-btn');
+      if (btn && btn.dataset.reply && elements.instagramInputMessage) {
+        elements.instagramInputMessage.value = btn.dataset.reply;
+        elements.instagramInputMessage.focus();
+      }
+    });
+  }
+  if (elements.btnIgBotActive) {
+    elements.btnIgBotActive.addEventListener('click', () => handleToggleInstagramBot(true));
+  }
+  if (elements.btnIgBotInactive) {
+    elements.btnIgBotInactive.addEventListener('click', () => handleToggleInstagramBot(false));
+  }
+  if (elements.btnIgComposerBotActive) {
+    elements.btnIgComposerBotActive.addEventListener('click', () => handleToggleInstagramBot(true));
+  }
+  if (elements.btnIgComposerBotInactive) {
+    elements.btnIgComposerBotInactive.addEventListener('click', () => handleToggleInstagramBot(false));
+  }
+  if (elements.btnResumeIgBotBanner) {
+    elements.btnResumeIgBotBanner.addEventListener('click', () => handleToggleInstagramBot(true));
+  }
+  if (elements.btnIgTestPing) {
+    elements.btnIgTestPing.addEventListener('click', triggerInstagramTestPing);
+  }
+  if (elements.btnIgSync) {
+    elements.btnIgSync.addEventListener('click', syncInstagramFromMeta);
+  }
+  if (elements.btnModalTestPing) {
+    elements.btnModalTestPing.addEventListener('click', triggerInstagramTestPing);
+  }
+  if (elements.btnIgCheckStatus) {
+    elements.btnIgCheckStatus.addEventListener('click', () => {
+      if (elements.modalIgDiagnostics) elements.modalIgDiagnostics.classList.remove('hidden');
+      fetchInstagramWebhookStatus();
+    });
+  }
+  if (elements.btnCloseIgDiagnostics) {
+    elements.btnCloseIgDiagnostics.addEventListener('click', () => {
+      if (elements.modalIgDiagnostics) elements.modalIgDiagnostics.classList.add('hidden');
+    });
   }
 
   // Pagination
@@ -353,6 +483,7 @@ function calculateKPIs(leads) {
   const completed = leads.filter((l) => l.status === 'completed').length;
   const whatsapp = leads.filter((l) => l.source === 'whatsapp').length;
   const website = leads.filter((l) => l.source === 'website').length;
+  const instagram = leads.filter((l) => l.source === 'instagram').length;
 
   elements.statTotal.textContent = total;
   elements.statNew.textContent = newLeads;
@@ -360,6 +491,9 @@ function calculateKPIs(leads) {
   elements.statCompleted.textContent = completed;
   elements.statWhatsapp.textContent = whatsapp;
   elements.statWebsite.textContent = website;
+  if (elements.statInstagram) {
+    elements.statInstagram.textContent = instagram || state.instagramInbox.conversations.length;
+  }
 }
 
 // Apply Filters and Search Client-Side
@@ -394,23 +528,25 @@ function applyFilters() {
 
   if (state.viewMode === 'table') {
     renderTable();
-  } else {
+  } else if (state.viewMode === 'kanban') {
     renderKanban();
   }
 }
 
-// Switch between Table, Kanban, and WhatsApp Inbox Views
+// Switch between Table, Kanban, WhatsApp Inbox, and Instagram Inbox Views
 function switchView(mode) {
   state.viewMode = mode;
 
   if (elements.tableViewContainer) elements.tableViewContainer.classList.toggle('hidden', mode !== 'table');
   if (elements.kanbanViewContainer) elements.kanbanViewContainer.classList.toggle('hidden', mode !== 'kanban');
   if (elements.inboxViewContainer) elements.inboxViewContainer.classList.toggle('hidden', mode !== 'inbox');
+  if (elements.instagramInboxViewContainer) elements.instagramInboxViewContainer.classList.toggle('hidden', mode !== 'instagram');
 
   const toggles = [
     { el: elements.viewToggleTable, active: mode === 'table' },
     { el: elements.viewToggleKanban, active: mode === 'kanban' },
     { el: elements.viewToggleInbox, active: mode === 'inbox' },
+    { el: elements.viewToggleInstagram, active: mode === 'instagram' },
   ];
 
   toggles.forEach(({ el, active }) => {
@@ -425,13 +561,19 @@ function switchView(mode) {
   });
 
   // Update Primary Top Navigation Tabs
-  if (elements.mainNavLeads && elements.mainNavInbox) {
-    if (mode === 'inbox') {
-      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-green-600 text-white shadow-lg shadow-green-600/20';
-      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800';
+  if (elements.mainNavLeads && elements.mainNavInbox && elements.mainNavInstagram) {
+    if (mode === 'instagram') {
+      elements.mainNavInstagram.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-600/20 active:scale-95';
+      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
+      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
+    } else if (mode === 'inbox') {
+      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-green-600 text-white shadow-lg shadow-green-600/20 active:scale-95';
+      elements.mainNavInstagram.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
+      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
     } else {
-      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-sky-600 text-white shadow-lg shadow-sky-600/20';
-      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800';
+      elements.mainNavLeads.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-sky-600 text-white shadow-lg shadow-sky-600/20 active:scale-95';
+      elements.mainNavInbox.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
+      elements.mainNavInstagram.className = 'flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800 active:scale-95';
     }
   }
 
@@ -441,6 +583,9 @@ function switchView(mode) {
     renderKanban();
   } else if (mode === 'inbox') {
     fetchConversations(true);
+  } else if (mode === 'instagram') {
+    fetchInstagramConversations(true);
+    fetchInstagramWebhookStatus();
   }
 }
 
@@ -1561,4 +1706,589 @@ async function handleCoexistenceSignupCallback(payload) {
     showToast(err.message, 'error');
   }
 }
+
+/* ==========================================================================
+   Instagram Live Inbox & Webhook Diagnostic Module
+   ========================================================================== */
+
+/**
+ * Fetch list of active Instagram conversations
+ */
+async function fetchInstagramConversations(autoSelectFirst = false) {
+  if (!elements.instagramConversationList) return;
+  state.instagramInbox.loading = true;
+
+  try {
+    const res = await fetch('/api/inbox/instagram/conversations');
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load Instagram conversations');
+
+    state.instagramInbox.conversations = json.data || [];
+    renderInstagramConversationsList();
+
+    // Update conversation count badge and KPI card
+    if (elements.igConversationCount) {
+      elements.igConversationCount.textContent = state.instagramInbox.conversations.length;
+    }
+    if (elements.statInstagram) {
+      elements.statInstagram.textContent = state.instagramInbox.conversations.length;
+    }
+
+    // Auto-select first conversation if requested
+    if (autoSelectFirst && state.instagramInbox.conversations.length > 0 && !state.instagramInbox.activeSenderId) {
+      const first = state.instagramInbox.conversations[0];
+      loadInstagramChatThread(first.senderId, first.customer_name);
+    }
+  } catch (err) {
+    console.error('[Instagram Inbox Error]', err);
+    showToast(err.message, 'error');
+  } finally {
+    state.instagramInbox.loading = false;
+  }
+}
+
+/**
+ * Filter and render conversation previews in the Instagram sidebar
+ */
+function renderInstagramConversationsList() {
+  if (!elements.instagramConversationList) return;
+
+  const query = state.instagramInbox.searchQuery;
+  const filtered = state.instagramInbox.conversations.filter((c) => {
+    if (!query) return true;
+    return (
+      (c.customer_name && c.customer_name.toLowerCase().includes(query)) ||
+      (c.senderId && c.senderId.toLowerCase().includes(query)) ||
+      (c.last_message && c.last_message.toLowerCase().includes(query))
+    );
+  });
+
+  if (filtered.length === 0) {
+    elements.instagramConversationList.innerHTML = `
+      <div class="p-6 text-center text-zinc-500 text-xs">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-500/20 via-pink-500/20 to-purple-500/20 text-pink-400 flex items-center justify-center mx-auto mb-2 border border-pink-500/30 shadow-inner">
+          <i data-lucide="instagram" class="w-6 h-6"></i>
+        </div>
+        <p class="font-medium text-zinc-300">No Instagram conversations yet</p>
+        <p class="text-[11px] text-zinc-500 mt-1 max-w-[220px] mx-auto">When customers send a DM to @creationindia_, their threads appear here.</p>
+        <button onclick="triggerInstagramTestPing()" class="mt-3.5 inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 text-white text-[11px] font-semibold shadow hover:brightness-110 active:scale-95 transition">
+          <i data-lucide="zap" class="w-3 h-3 text-yellow-300"></i>
+          <span>Simulate Test DM</span>
+        </button>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  elements.instagramConversationList.innerHTML = filtered
+    .map((conv) => {
+      const isActive = state.instagramInbox.activeSenderId === conv.senderId;
+      const activeClass = isActive
+        ? 'conversation-item-ig-active bg-zinc-800/90 shadow-sm'
+        : 'hover:bg-zinc-900/60 border-l-4 border-l-transparent';
+
+      const initials = (conv.customer_name || 'IG')
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
+      const senderTag =
+        conv.last_sender === 'customer'
+          ? '<span class="text-pink-400 text-[10px] font-medium mr-1">↙</span>'
+          : conv.last_sender === 'bot'
+          ? '<span class="text-indigo-400 text-[10px] font-semibold mr-1">🤖 Bot:</span>'
+          : '<span class="text-rose-400 text-[10px] font-semibold mr-1">↗ You:</span>';
+
+      const avatarBg = isActive
+        ? 'bg-gradient-to-tr from-yellow-500 via-pink-600 to-purple-600 text-white shadow-md'
+        : 'bg-zinc-900 text-pink-300 border border-zinc-700/80';
+
+      const botBadge = conv.botPaused
+        ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 border border-amber-800/60 font-medium">Human</span>'
+        : '';
+
+      return `
+        <div 
+          onclick="loadInstagramChatThread('${escapeHtml(conv.senderId)}', '${escapeHtml(conv.customer_name)}')"
+          class="conversation-item p-3.5 cursor-pointer transition flex items-start space-x-3 border-b border-zinc-900/80 ${activeClass}"
+        >
+          <div class="w-10 h-10 rounded-xl ${avatarBg} font-bold flex items-center justify-center text-xs shrink-0 transition shadow-inner">
+            ${escapeHtml(initials)}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+              <h5 class="text-xs font-bold text-zinc-100 truncate">${escapeHtml(conv.customer_name)}</h5>
+              <span class="text-[10px] text-zinc-500 font-medium shrink-0 ml-1.5">${formatTimeAgo(conv.last_message_at)}</span>
+            </div>
+            <div class="flex items-center justify-between mt-0.5">
+              <p class="text-[11px] text-zinc-400 font-mono">ID: ${escapeHtml(conv.senderId)}</p>
+              ${botBadge}
+            </div>
+            <p class="text-xs text-zinc-400 truncate mt-1 flex items-center">
+              ${senderTag}<span>${escapeHtml(conv.last_message || '')}</span>
+            </p>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  lucide.createIcons();
+}
+
+/**
+ * Load and display full message thread for a selected Instagram user
+ */
+async function loadInstagramChatThread(senderId, customerName) {
+  state.instagramInbox.activeSenderId = senderId;
+  state.instagramInbox.activeCustomerName = customerName || `Instagram User (${senderId.slice(-4)})`;
+
+  // Update header details
+  if (elements.instagramHeaderName) elements.instagramHeaderName.textContent = customerName || `Instagram User (${senderId.slice(-4)})`;
+  if (elements.instagramHeaderId) elements.instagramHeaderId.textContent = `Instagram IGSID: ${senderId}`;
+
+  const initials = (customerName || 'IG')
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  if (elements.instagramHeaderAvatar) elements.instagramHeaderAvatar.textContent = initials;
+
+  // Unhide actions and composer
+  if (elements.instagramHeaderActions) elements.instagramHeaderActions.classList.remove('hidden');
+  if (elements.instagramQuickTemplates) elements.instagramQuickTemplates.classList.remove('hidden');
+  if (elements.instagramComposerBar) elements.instagramComposerBar.classList.remove('hidden');
+
+  // Mobile layout switch: Hide sidebar, show chat pane
+  if (window.innerWidth < 768) {
+    if (elements.instagramSidebar) elements.instagramSidebar.classList.add('hidden');
+    if (elements.instagramChatPane) elements.instagramChatPane.classList.remove('hidden');
+  }
+
+  renderInstagramConversationsList();
+
+  // Show loading indicator in message container
+  if (elements.instagramMessagesContainer) {
+    elements.instagramMessagesContainer.innerHTML = `
+      <div class="h-full flex items-center justify-center text-zinc-500 text-xs">
+        <i data-lucide="loader-2" class="w-5 h-5 animate-spin mr-2 text-pink-400"></i>
+        <span>Loading Instagram messages...</span>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  try {
+    const res = await fetch(`/api/inbox/instagram/messages/${encodeURIComponent(senderId)}`);
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load Instagram thread');
+
+    state.instagramInbox.messages = json.data || [];
+    renderInstagramMessageThread();
+
+    // Check Bot Paused status from backend meta
+    const isBotPaused = Boolean(json.meta?.botPaused);
+    updateInstagramBotStatusUI(isBotPaused);
+  } catch (err) {
+    console.error('[Load Instagram Thread Error]', err);
+    showToast(err.message, 'error');
+  }
+}
+
+/**
+ * Update Bot Status UI for Instagram
+ */
+function updateInstagramBotStatusUI(isPaused) {
+  state.instagramInbox.botPaused = Boolean(isPaused);
+
+  // Top-Right Header 2 Options: Bot Active vs Bot Inactive
+  if (elements.btnIgBotActive && elements.btnIgBotInactive) {
+    if (isPaused) {
+      elements.btnIgBotActive.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition active:scale-95 bg-transparent';
+      if (elements.dotIgBotActive) elements.dotIgBotActive.className = 'w-2 h-2 rounded-full bg-zinc-600';
+
+      elements.btnIgBotInactive.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-amber-600 text-white shadow active:scale-95';
+      if (elements.dotIgBotInactive) elements.dotIgBotInactive.className = 'w-2 h-2 rounded-full bg-white animate-pulse';
+    } else {
+      elements.btnIgBotActive.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-green-600 text-white shadow active:scale-95';
+      if (elements.dotIgBotActive) elements.dotIgBotActive.className = 'w-2 h-2 rounded-full bg-white animate-pulse';
+
+      elements.btnIgBotInactive.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition active:scale-95 bg-transparent';
+      if (elements.dotIgBotInactive) elements.dotIgBotInactive.className = 'w-2 h-2 rounded-full bg-zinc-600';
+    }
+  }
+
+  // Composer Bar 2 Options
+  if (elements.btnIgComposerBotActive && elements.btnIgComposerBotInactive) {
+    if (isPaused) {
+      elements.btnIgComposerBotActive.className = 'px-2.5 py-0.5 rounded text-[11px] font-medium transition text-zinc-400 hover:text-white active:scale-95 bg-transparent';
+      elements.btnIgComposerBotInactive.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold transition bg-amber-600 text-white shadow-sm active:scale-95';
+    } else {
+      elements.btnIgComposerBotActive.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold transition bg-green-600 text-white shadow-sm active:scale-95';
+      elements.btnIgComposerBotInactive.className = 'px-2.5 py-0.5 rounded text-[11px] font-medium transition text-zinc-400 hover:text-white active:scale-95 bg-transparent';
+    }
+  }
+
+  if (elements.igComposerBotStatusBadge) {
+    if (isPaused) {
+      elements.igComposerBotStatusBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-950 text-amber-400 border border-amber-800/80';
+      elements.igComposerBotStatusBadge.textContent = '⏸️ Bot Inactive';
+    } else {
+      elements.igComposerBotStatusBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-950 text-green-400 border border-green-800/80';
+      elements.igComposerBotStatusBadge.textContent = '🟢 Bot Active';
+    }
+  }
+
+  if (elements.instagramHumanBanner) {
+    elements.instagramHumanBanner.classList.toggle('hidden', !isPaused);
+  }
+}
+
+/**
+ * Toggle Bot Active / Inactive state for current Instagram conversation
+ */
+async function handleToggleInstagramBot(forceActive = null) {
+  if (!state.instagramInbox.activeSenderId) return;
+
+  const currentPaused = state.instagramInbox.botPaused;
+  const targetActive = forceActive !== null ? forceActive : currentPaused;
+
+  updateInstagramBotStatusUI(!targetActive);
+
+  try {
+    const res = await fetch('/api/inbox/instagram/bot-toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId: state.instagramInbox.activeSenderId,
+        botActive: targetActive,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to toggle Instagram bot status');
+
+    if (targetActive) {
+      showToast('Instagram bot set to Active! Automated DM replies enabled.', 'success');
+    } else {
+      showToast('Instagram bot set to Inactive! Human mode enabled.', 'info');
+    }
+    fetchInstagramConversations();
+  } catch (err) {
+    console.error('[Instagram Bot Toggle Error]', err);
+    showToast(err.message, 'error');
+    updateInstagramBotStatusUI(currentPaused);
+  }
+}
+
+/**
+ * Render message bubbles inside Instagram chat pane
+ */
+function renderInstagramMessageThread() {
+  if (!elements.instagramMessagesContainer) return;
+
+  if (state.instagramInbox.messages.length === 0) {
+    elements.instagramMessagesContainer.innerHTML = `
+      <div class="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500">
+        <i data-lucide="message-square" class="w-8 h-8 mb-2 opacity-40 text-pink-400"></i>
+        <p class="text-xs">No recorded messages in this Instagram thread yet.</p>
+        <p class="text-[11px] text-zinc-600 mt-1">Send a message below to reach out directly.</p>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  elements.instagramMessagesContainer.innerHTML = state.instagramInbox.messages
+    .map((msg) => {
+      const isCustomer = msg.direction === 'inbound';
+      const isBot = msg.sender === 'bot';
+      const timeStr = formatMessageClock(msg.created_at);
+
+      if (isCustomer) {
+        return `
+          <div class="flex flex-col items-start max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tl-xs bg-zinc-900/95 text-zinc-100 text-xs sm:text-sm border border-pink-900/40 shadow-md leading-relaxed whitespace-pre-wrap select-text">
+              <div class="flex items-center space-x-1.5 text-[10px] text-pink-400 font-bold mb-1">
+                <i data-lucide="instagram" class="w-3 h-3"></i>
+                <span>Customer DM</span>
+              </div>
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 ml-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      } else if (isBot) {
+        return `
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tr-xs bg-indigo-950/40 text-zinc-200 text-xs sm:text-sm border border-indigo-500/30 shadow-md leading-relaxed whitespace-pre-wrap select-text">
+              <div class="flex items-center space-x-1.5 text-[10px] text-indigo-400 font-bold mb-1">
+                <i data-lucide="bot" class="w-3 h-3"></i>
+                <span>Automated Assistant</span>
+              </div>
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      } else {
+        // Staff reply
+        return `
+          <div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%] animate-fade-in">
+            <div class="px-4 py-2.5 rounded-2xl rounded-tr-xs bubble-ig-outbound text-white text-xs sm:text-sm shadow-lg leading-relaxed whitespace-pre-wrap select-text">
+              <div class="flex items-center space-x-1.5 text-[10px] text-pink-100 font-bold mb-1">
+                <i data-lucide="user-check" class="w-3 h-3"></i>
+                <span>You (Staff)</span>
+              </div>
+              ${escapeHtml(msg.message_text)}
+            </div>
+            <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      }
+    })
+    .join('');
+
+  lucide.createIcons();
+  elements.instagramMessagesContainer.scrollTop = elements.instagramMessagesContainer.scrollHeight;
+}
+
+/**
+ * Handle sending manual outbound reply from Instagram composer
+ */
+async function handleInstagramSend(e) {
+  e.preventDefault();
+  if (!state.instagramInbox.activeSenderId || !elements.instagramInputMessage) return;
+
+  const text = elements.instagramInputMessage.value.trim();
+  if (!text) return;
+
+  const senderId = state.instagramInbox.activeSenderId;
+  const customerName = state.instagramInbox.activeCustomerName;
+
+  // Optimistic UI update
+  const tempMessage = {
+    phone: `ig_${senderId}`,
+    customer_name: customerName,
+    direction: 'outbound',
+    sender: 'agent',
+    message_text: text,
+    created_at: new Date().toISOString(),
+  };
+
+  state.instagramInbox.messages.push(tempMessage);
+  renderInstagramMessageThread();
+  updateInstagramBotStatusUI(true); // Automatically switch to Human mode
+
+  elements.instagramInputMessage.value = '';
+  if (elements.btnInstagramSend) elements.btnInstagramSend.disabled = true;
+
+  try {
+    const res = await fetch('/api/inbox/instagram/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId,
+        customerName,
+        message: text,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to dispatch Instagram message');
+
+    showToast('Instagram DM dispatched successfully!', 'success');
+    fetchInstagramConversations();
+  } catch (err) {
+    console.error('[Send Instagram Message Error]', err);
+    // Remove optimistic message if dispatch failed
+    const idx = state.instagramInbox.messages.indexOf(tempMessage);
+    if (idx !== -1) {
+      state.instagramInbox.messages.splice(idx, 1);
+      renderInstagramMessageThread();
+    }
+    // Restore message text to input field
+    elements.instagramInputMessage.value = text;
+    showToast(err.message, 'error');
+  } finally {
+    if (elements.btnInstagramSend) elements.btnInstagramSend.disabled = false;
+  }
+}
+
+/**
+ * Mobile back button in Instagram chat header
+ */
+function handleInstagramBack() {
+  if (elements.instagramSidebar) elements.instagramSidebar.classList.remove('hidden');
+  if (elements.instagramChatPane) elements.instagramChatPane.classList.add('hidden');
+}
+
+/**
+ * Helper to jump directly from Lead Table or Kanban into Instagram Inbox
+ */
+function openInstagramChat(senderId, customerName) {
+  switchView('instagram');
+  loadInstagramChatThread(senderId, customerName);
+}
+
+/**
+ * Fetch Instagram Webhook & account health status
+ */
+async function fetchInstagramWebhookStatus() {
+  try {
+    const res = await fetch('/api/inbox/instagram/status');
+    if (res.status === 401) return;
+
+    const json = await res.json();
+    if (!res.ok) return;
+
+    const { tokenConfigured, tokenPrefix, latestEvent } = json.data || {};
+
+    if (elements.igWebhookBadge) {
+      elements.igWebhookBadge.innerHTML = tokenConfigured
+        ? '<span class="text-emerald-400 font-bold">🟢 Listening</span>'
+        : '<span class="text-amber-400 font-bold">⚠️ Token Missing</span>';
+    }
+
+    if (elements.igDiagnosticLastEvent) {
+      if (latestEvent) {
+        elements.igDiagnosticLastEvent.textContent = `${formatTimeAgo(latestEvent.timestamp)} (${latestEvent.senderId || 'user'}): "${latestEvent.message || ''}"`;
+      } else {
+        elements.igDiagnosticLastEvent.textContent = 'No events received yet';
+      }
+    }
+
+    // Update Diagnostics Modal fields
+    if (elements.igDiagTokenStatus) {
+      elements.igDiagTokenStatus.innerHTML = tokenConfigured
+        ? '<span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Configured & Active'
+        : '<span class="w-2 h-2 rounded-full bg-red-400 mr-1.5"></span> Token Unset';
+    }
+    if (elements.igDiagTokenPrefix) {
+      elements.igDiagTokenPrefix.textContent = tokenPrefix || 'None';
+    }
+    if (elements.igDiagEventTime) {
+      elements.igDiagEventTime.textContent = latestEvent?.timestamp ? new Date(latestEvent.timestamp).toLocaleString() : 'None';
+    }
+    if (elements.igRawEventJson) {
+      elements.igRawEventJson.textContent = latestEvent
+        ? JSON.stringify(latestEvent, null, 2)
+        : '// Awaiting first webhook event from Meta...\n// Tip: Click "Simulate Test DM Now" to test live reception!';
+    }
+  } catch (err) {
+    console.warn('[Fetch IG Status Error]', err);
+  }
+}
+
+/**
+ * Simulate an incoming Instagram DM to test live reception
+ */
+async function triggerInstagramTestPing() {
+  showToast('Simulating incoming Instagram DM...', 'info');
+
+  try {
+    const sampleMessages = [
+      'Hi! What is the price for full body PPF on BMW 3 Series?',
+      'Hello, do you have ceramic coating slots available this weekend?',
+      'Hey Signature Detailing! Looking for interior deep cleaning and exterior polish.',
+      'Hi, where is your workshop located in town?',
+    ];
+    const randomMsg = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
+
+    const res = await fetch('/api/inbox/instagram/test-ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        senderId: 'arc____hit_simulated',
+        message: randomMsg,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Simulation failed');
+
+    showToast('Simulated Instagram DM received! Conversation created & bot replied.', 'success');
+
+    // Switch view to instagram and auto-load the simulated thread
+    switchView('instagram');
+    await fetchInstagramConversations();
+    loadInstagramChatThread('arc____hit_simulated', 'Instagram User (simulated)');
+    fetchInstagramWebhookStatus();
+  } catch (err) {
+    console.error('[Test Ping Error]', err);
+    showToast(err.message, 'error');
+  }
+}
+
+/**
+ * Sync conversations directly from Meta Instagram Graph API
+ */
+async function syncInstagramFromMeta() {
+  showToast('Querying Meta Graph API for active conversations...', 'info');
+  if (elements.btnIgSync) elements.btnIgSync.disabled = true;
+
+  try {
+    const res = await fetch('/api/inbox/instagram/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Meta sync failed');
+
+    const { count, notice } = json.data || {};
+    if (count > 0) {
+      showToast(`Synced ${count} conversation(s) from Meta!`, 'success');
+      await fetchInstagramConversations();
+    } else {
+      showToast(notice || 'Meta returned 0 conversations.', 'warning');
+    }
+  } catch (err) {
+    console.error('[Sync Meta Error]', err);
+    showToast(err.message, 'error');
+  } finally {
+    if (elements.btnIgSync) elements.btnIgSync.disabled = false;
+  }
+}
+
+// Expose openInstagramChat, loadInstagramChatThread, triggerInstagramTestPing, and syncInstagramFromMeta globally
+window.openInstagramChat = openInstagramChat;
+window.loadInstagramChatThread = loadInstagramChatThread;
+window.triggerInstagramTestPing = triggerInstagramTestPing;
+window.syncInstagramFromMeta = syncInstagramFromMeta;
+
 

@@ -77,7 +77,13 @@
         <!-- Primary Top WhatsApp Inbox Navigation Button -->
         <button id="nav-btn-inbox" class="flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-green-600/20 transition active:scale-95">
           <i data-lucide="message-circle" class="w-4 h-4"></i>
-          <span>WhatsApp Inbox</span>
+          <span>WhatsApp</span>
+        </button>
+
+        <!-- Primary Top Instagram Inbox Navigation Button -->
+        <button id="nav-btn-instagram" class="flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-pink-600/20 transition active:scale-95">
+          <i data-lucide="instagram" class="w-4 h-4"></i>
+          <span>Instagram</span>
         </button>
 
         <!-- Add New Lead Button -->
@@ -112,19 +118,30 @@
           <span>WhatsApp Live Inbox</span>
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-950 text-green-400 border border-green-800/80 shadow-sm">Live</span>
         </button>
+
+        <button id="main-nav-instagram" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-zinc-900 text-zinc-300 hover:text-white hover:bg-zinc-800/90 border border-zinc-800/80 active:scale-95">
+          <i data-lucide="instagram" class="w-4 h-4 text-pink-400"></i>
+          <span>Instagram Live Inbox</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-950 text-pink-400 border border-pink-800/80 shadow-sm">Live</span>
+        </button>
       </div>
 
       <div class="hidden sm:flex items-center space-x-2 text-xs text-zinc-400 pr-2">
         <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-emerald-900/50 shadow-inner" title="WhatsApp Business: Active & Connected">
           <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
-          <span class="text-zinc-200 font-medium">WhatsApp Cloud</span>
+          <span class="text-zinc-200 font-medium">WhatsApp</span>
           <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800/60">Connected</span>
+        </div>
+        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-pink-900/50 shadow-inner" title="Instagram Business: @creationindia_">
+          <span class="w-2 h-2 rounded-full bg-pink-400 pulse-dot"></span>
+          <span class="text-zinc-200 font-medium">@creationindia_</span>
+          <span class="text-[10px] text-pink-400 font-semibold bg-pink-950 px-1.5 py-0.5 rounded border border-pink-800/60">Connected</span>
         </div>
       </div>
     </nav>
 
     <!-- KPI Metric Cards Grid -->
-    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4">
       
       <!-- Metric: Total Leads -->
       <div class="glass-card glass-card-hover p-3.5 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm">
@@ -175,7 +192,7 @@
       </div>
 
       <!-- Metric: WhatsApp Channel Leads -->
-      <div id="card-metric-whatsapp" title="Click to open WhatsApp Live Inbox" class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 col-span-2 sm:col-span-1 shadow-sm cursor-pointer hover:border-green-500/60 hover:bg-green-950/10 transition group active:scale-95">
+      <div id="card-metric-whatsapp" title="Click to open WhatsApp Live Inbox" class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm cursor-pointer hover:border-green-500/60 hover:bg-green-950/10 transition group active:scale-95">
         <div class="min-w-0">
           <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">WhatsApp Leads</p>
           <h3 id="stat-whatsapp" class="text-xl sm:text-2xl font-bold text-green-400 mt-0.5 font-display">0</h3>
@@ -183,6 +200,18 @@
         </div>
         <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-950/40 border border-green-900/50 flex items-center justify-center text-green-400 shrink-0 ml-1">
           <i data-lucide="message-square" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+        </div>
+      </div>
+
+      <!-- Metric: Instagram Channel Leads -->
+      <div id="card-metric-instagram" title="Click to open Instagram Live Inbox" class="glass-card p-3 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/90 shadow-sm cursor-pointer hover:border-pink-500/60 hover:bg-pink-950/10 transition group active:scale-95">
+        <div class="min-w-0">
+          <p class="text-[10px] sm:text-xs font-medium text-zinc-400 uppercase tracking-wider truncate">Instagram Leads</p>
+          <h3 id="stat-instagram" class="text-xl sm:text-2xl font-bold text-pink-400 mt-0.5 font-display">0</h3>
+          <p class="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 truncate">DMs & Messages</p>
+        </div>
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-pink-950/40 border border-pink-900/50 flex items-center justify-center text-pink-400 shrink-0 ml-1">
+          <i data-lucide="instagram" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </div>
       </div>
 
@@ -254,7 +283,11 @@
             </button>
             <button id="view-toggle-inbox" class="px-3 py-1 rounded text-xs font-medium transition flex items-center space-x-1.5 text-zinc-400 hover:text-zinc-200">
               <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-              <span>Inbox</span>
+              <span>WhatsApp</span>
+            </button>
+            <button id="view-toggle-instagram" class="px-3 py-1 rounded text-xs font-medium transition flex items-center space-x-1.5 text-zinc-400 hover:text-zinc-200">
+              <i data-lucide="instagram" class="w-3.5 h-3.5"></i>
+              <span>Instagram</span>
             </button>
           </div>
         </div>
@@ -529,6 +562,204 @@
       </div>
     </section>
 
+    <!-- Instagram Inbox View Container -->
+    <section id="instagram-inbox-view-container" class="space-y-3.5 hidden">
+      
+      <!-- Diagnostic & Webhook Monitor Suite -->
+      <div class="glass-card rounded-xl border border-pink-900/40 p-3.5 sm:p-4 bg-gradient-to-r from-pink-950/20 via-zinc-950/90 to-purple-950/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-lg">
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-yellow-500 via-pink-600 to-purple-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-pink-600/20">
+            <i data-lucide="instagram" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center space-x-2">
+              <h3 class="text-sm font-bold text-white font-display">Instagram Live Webhook Monitor</h3>
+              <span id="ig-webhook-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/70">🟢 Listening</span>
+            </div>
+            <p class="text-[11px] text-zinc-400 truncate mt-0.5">
+              Account: <span class="text-pink-400 font-semibold font-mono">@creationindia_</span> (Media Creator) &bull; Webhook: <span class="font-mono text-zinc-300">/api/webhook/instagram</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+          <div class="hidden xl:flex items-center space-x-2 px-3 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400">
+            <span>Last Webhook:</span>
+            <span id="ig-diagnostic-last-event" class="text-zinc-200 font-mono font-medium truncate max-w-[200px]">Awaiting events...</span>
+          </div>
+
+          <button id="btn-ig-check-status" title="Check Token & Webhook Status" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-medium transition active:scale-95">
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Diagnostics</span>
+          </button>
+
+          <!-- Sync Meta API Chats button -->
+          <button id="btn-ig-sync" title="Sync live conversations from Meta Instagram Graph API" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-medium transition active:scale-95">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Sync Meta Chats</span>
+          </button>
+
+          <!-- 1-Click Simulate Test DM button! Directly answers: "First lets just test whether we are receiving the message or not" -->
+          <button id="btn-ig-test-ping" title="Simulate an incoming Instagram DM to verify dashboard reception" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-semibold shadow-md shadow-pink-600/20 transition active:scale-95">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
+            <span>Simulate Test DM</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Instagram Chat Window -->
+      <div class="glass-card rounded-xl border border-zinc-800 overflow-hidden shadow-xl">
+        <div class="flex flex-col md:flex-row h-[660px]">
+          
+          <!-- Left Pane: Conversations List -->
+          <div id="instagram-sidebar" class="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col bg-zinc-950/60">
+            <!-- Header -->
+            <div class="p-3.5 border-b border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="instagram" class="w-4 h-4 text-pink-400"></i>
+                <h3 class="text-sm font-bold text-white font-display">Instagram DMs</h3>
+                <span id="ig-conversation-count" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-950/80 text-pink-400 border border-pink-800/60">0</span>
+              </div>
+              <button id="btn-refresh-instagram-inbox" title="Refresh Instagram chats" class="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition active:scale-95">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Search -->
+            <div class="p-2.5 border-b border-zinc-800">
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"></i>
+                <input 
+                  type="text" 
+                  id="instagram-search-input" 
+                  placeholder="Search Instagram chats..." 
+                  class="w-full bg-zinc-900 text-zinc-200 placeholder-zinc-500 pl-8 pr-3 py-1.5 rounded-lg border border-zinc-800 text-xs focus:outline-none focus:border-pink-500"
+                >
+              </div>
+            </div>
+
+            <!-- Conversation Scroll List -->
+            <div id="instagram-conversation-list" class="flex-1 overflow-y-auto divide-y divide-zinc-900">
+              <!-- Dynamically populated conversations -->
+            </div>
+          </div>
+
+          <!-- Right Pane: Chat Thread & Composer -->
+          <div id="instagram-chat-pane" class="flex-1 flex flex-col bg-zinc-950/30">
+            <!-- Thread Header -->
+            <div id="instagram-thread-header" class="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+              <div class="flex items-center space-x-3">
+                <button id="btn-instagram-back" class="md:hidden p-1.5 rounded-lg text-zinc-400 hover:text-white bg-zinc-800">
+                  <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                </button>
+                <div id="instagram-header-avatar" class="w-9 h-9 rounded-full bg-gradient-to-tr from-yellow-500 via-pink-600 to-purple-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  IG
+                </div>
+                <div>
+                  <h4 id="instagram-header-name" class="text-sm font-bold text-white font-display">Select a conversation</h4>
+                  <p id="instagram-header-id" class="text-xs text-zinc-400">Select a chat from the left to start messaging</p>
+                </div>
+              </div>
+
+              <!-- Header Quick Actions (Bot Active vs Bot Inactive) -->
+              <div id="instagram-header-actions" class="hidden flex-wrap items-center gap-2.5">
+                <div class="inline-flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-xs shadow-inner">
+                  <button 
+                    type="button" 
+                    id="btn-ig-bot-active" 
+                    title="Activate automated bot for this customer" 
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition bg-green-600 text-white shadow active:scale-95"
+                  >
+                    <span id="dot-ig-bot-active" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                    <span>Bot Active</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    id="btn-ig-bot-inactive" 
+                    title="Deactivate bot (Human mode)" 
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-white transition active:scale-95"
+                  >
+                    <span id="dot-ig-bot-inactive" class="w-2 h-2 rounded-full bg-zinc-600"></span>
+                    <span>Bot Inactive</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Human Mode Alert Banner (Visible when Bot Inactive) -->
+            <div id="instagram-human-banner" class="hidden px-4 py-2 bg-amber-950/50 border-b border-amber-900/60 flex items-center justify-between text-xs text-amber-300 shadow-inner">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="user-check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span><strong>Bot Inactive (Human Takeover)</strong> — Automated replies are silenced for this Instagram user.</span>
+              </div>
+              <button id="btn-resume-ig-bot-banner" class="px-2.5 py-1 rounded-md bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition ml-2 shrink-0 shadow">Set Bot Active</button>
+            </div>
+
+            <!-- Messages Stream Container -->
+            <div id="instagram-messages-container" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 chat-mesh-bg">
+              <div class="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500">
+                <i data-lucide="instagram" class="w-10 h-10 mb-2 opacity-40 text-pink-500"></i>
+                <p class="text-sm">No Instagram conversation selected</p>
+                <p class="text-xs text-zinc-600 mt-1">Select an Instagram user on the left to read messages or send a live reply.</p>
+              </div>
+            </div>
+
+            <!-- Quick Templates Bar -->
+            <div id="instagram-quick-templates" class="hidden px-3.5 py-2 border-t border-zinc-800/80 bg-zinc-900/40 overflow-x-auto whitespace-nowrap space-x-2">
+              <span class="text-[11px] text-zinc-500 font-medium self-center mr-1">Quick replies:</span>
+              <button class="ig-quick-reply-btn text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition" data-reply="Hi! Thanks for reaching out to Signature Detailing. What car model do you drive?">
+                🚗 Model Inquiry
+              </button>
+              <button class="ig-quick-reply-btn text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition" data-reply="Our PPF and Ceramic Coating packages protect against scratches and UV fade. Would you like a price estimate?">
+                🛡️ Packages Info
+              </button>
+              <button class="ig-quick-reply-btn text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition" data-reply="Could you please share your WhatsApp number so we can send package brochures and slots?">
+                📲 WhatsApp Info
+              </button>
+              <button class="ig-quick-reply-btn text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition" data-reply="We are located at Signature Detailing Studio. You are welcome to drop by for a free paint inspection! 🚘">
+                📍 Location & Visit
+              </button>
+            </div>
+
+            <!-- Live Reply Composer -->
+            <div id="instagram-composer-bar" class="hidden border-t border-zinc-800 bg-zinc-900/90">
+              <!-- Composer Bot Status & Toggle Bar -->
+              <div class="px-3.5 py-1.5 bg-zinc-950/60 border-b border-zinc-800/60 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                  <span class="text-zinc-400 font-medium">Instagram Chat:</span>
+                  <span id="ig-composer-bot-status-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-950 text-green-400 border border-green-800/80">🟢 Bot Active</span>
+                </div>
+                <div class="inline-flex p-0.5 rounded-lg bg-zinc-900 border border-zinc-700/70 text-xs">
+                  <button type="button" id="btn-ig-composer-bot-active" class="px-2.5 py-0.5 rounded text-[11px] font-bold transition bg-green-600 text-white shadow-sm active:scale-95">Bot Active</button>
+                  <button type="button" id="btn-ig-composer-bot-inactive" class="px-2.5 py-0.5 rounded text-[11px] font-medium transition text-zinc-400 hover:text-white active:scale-95">Bot Inactive</button>
+                </div>
+              </div>
+
+              <form id="form-instagram-send" class="p-3 flex items-center space-x-2">
+                <input 
+                  type="text" 
+                  id="instagram-input-message" 
+                  placeholder="Type an Instagram reply..." 
+                  class="flex-1 bg-zinc-950 text-zinc-100 placeholder-zinc-500 px-4 py-2.5 rounded-lg border border-zinc-800 focus:outline-none focus:border-pink-500 text-xs sm:text-sm"
+                  autocomplete="off"
+                >
+                <button 
+                  type="submit" 
+                  id="btn-instagram-send" 
+                  class="flex items-center space-x-1.5 px-4 py-2.5 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-pink-600/20 transition active:scale-95 disabled:opacity-50"
+                >
+                  <span>Send</span>
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                </button>
+              </form>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Modal: Add New Lead -->
@@ -617,6 +848,76 @@
       <div class="flex items-center justify-center space-x-3 pt-2">
         <button id="btn-cancel-delete" class="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">Cancel</button>
         <button id="btn-confirm-delete" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-lg shadow-red-600/30 transition active:scale-95">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Instagram Webhook Diagnostics & Activity -->
+  <div id="modal-ig-diagnostics" class="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/80 backdrop-blur-sm hidden overflow-y-auto">
+    <div class="glass-card w-full max-w-xl rounded-2xl border border-pink-900/60 p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white font-display">Instagram Webhook Diagnostics</h3>
+            <p class="text-[11px] text-zinc-400">Meta Graph API & Webhook Reception Health</p>
+          </div>
+        </div>
+        <button id="btn-close-ig-diagnostics" class="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800">
+            <span class="text-zinc-500 block text-[10px] uppercase font-semibold">Account</span>
+            <span class="text-white font-bold text-sm">@creationindia_</span>
+            <span class="text-[10px] text-zinc-400 block mt-0.5">Type: MEDIA_CREATOR (29347217818200339)</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800">
+            <span class="text-zinc-500 block text-[10px] uppercase font-semibold">Meta Token Status</span>
+            <span id="ig-diag-token-status" class="text-emerald-400 font-bold text-sm flex items-center mt-0.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span> Configured & Active
+            </span>
+            <span id="ig-diag-token-prefix" class="text-[10px] font-mono text-zinc-400 block mt-0.5 truncate">IGAAO2AZAX...</span>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-1">
+          <span class="text-zinc-500 block text-[10px] uppercase font-semibold">Webhook Endpoint</span>
+          <div class="flex items-center justify-between font-mono text-[11px] bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800/80 text-pink-300">
+            <span class="truncate select-all">https://car-detailing-crm-backend.vercel.app/api/webhook/instagram</span>
+            <span class="text-[10px] text-zinc-500 ml-2">POST</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-zinc-400 pt-1">
+            <span>Verify Token: <span class="font-mono text-zinc-300">signature_crm_verify_token</span></span>
+            <span class="text-emerald-400 font-semibold">HTTP 200 Handshake Ready</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-zinc-400 font-semibold text-xs flex items-center">
+              <i data-lucide="radio" class="w-3.5 h-3.5 mr-1 text-pink-400"></i>
+              Last Received Webhook Event
+            </span>
+            <span id="ig-diag-event-time" class="text-[10px] text-zinc-500 font-mono">None yet</span>
+          </div>
+          <pre id="ig-raw-event-json" class="p-3 rounded-xl bg-zinc-950 border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto max-h-48 leading-relaxed">// Awaiting first webhook event from Meta...
+// Tip: Use the "Simulate Test DM" button below to verify immediate reception!</pre>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-zinc-800">
+        <span class="text-[11px] text-zinc-500">Live reception verified through in-memory & Supabase logging.</span>
+        <button id="btn-modal-test-ping" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-semibold shadow-md shadow-pink-600/20 transition active:scale-95">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
+          <span>Simulate Test DM Now</span>
+        </button>
       </div>
     </div>
   </div>

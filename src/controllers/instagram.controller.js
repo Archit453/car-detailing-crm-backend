@@ -45,14 +45,31 @@ export const verifyInstagramWebhook = (req, res) => {
   return res.status(403).json({ error: 'Forbidden: Invalid verify token' });
 };
 
+export let latestInstagramWebhookEvent = {
+  receivedAt: null,
+  object: null,
+  senderId: null,
+  text: null,
+  status: 'Ready - Awaiting incoming webhook',
+  count: 0,
+};
+
 /**
- * Sends a message back to the Instagram user via Meta Graph API
+ * Dispatches an outbound message to an Instagram user via Meta Graph API
  */
-async function sendInstagramReply(recipientId, text) {
+export async function sendInstagramOutboundMessage(recipientId, text) {
   const token = config.instagram.pageAccessToken;
   if (!token) {
-    console.log(`[Instagram Bot (Simulated)] -> User (${recipientId}):\n${text}`);
-    return;
+    return { success: false, error: 'No Instagram Access Token configured in environment' };
+  }
+
+  const cleanId = String(recipientId || '').replace(/^ig_/, '').trim();
+
+  // Validate that recipientId is a numeric string (IGSID)
+  if (!/^\d+$/.test(cleanId)) {
+    const errorMsg = `Recipient ID "${recipientId}" is a placeholder or username, NOT a numeric Instagram-Scoped User ID (IGSID). Meta only delivers messages to numeric IDs (e.g. 17841400123456789) assigned by Meta when a user sends a DM.`;
+    console.error(`[Instagram Outbound Blocked] ${errorMsg}`);
+    return { success: false, error: errorMsg };
   }
 
   try {
@@ -66,7 +83,7 @@ async function sendInstagramReply(recipientId, text) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        recipient: { id: recipientId },
+        recipient: { id: cleanId },
         message: { text },
       }),
     });
@@ -74,12 +91,26 @@ async function sendInstagramReply(recipientId, text) {
     const data = await response.json();
     if (!response.ok) {
       console.error('[Instagram Graph API Error]', data);
-    } else {
-      console.log(`[Instagram Bot Sent Message] -> User (${recipientId}): ${text.slice(0, 50)}...`);
+      return { success: false, error: data.error?.message || 'Meta API rejected message', details: data };
     }
+
+    console.log(`[Instagram Outbound Sent] -> User (${cleanId}): ${text.slice(0, 50)}...`);
+    return { success: true, data };
   } catch (err) {
     console.error('[Instagram API Network Error]', err.message);
+    return { success: false, error: err.message };
   }
+}
+
+/**
+ * Sends a message back to the Instagram user via Meta Graph API (Internal Bot)
+ */
+async function sendInstagramReply(recipientId, text) {
+  const result = await sendInstagramOutboundMessage(recipientId, text);
+  if (!result.success) {
+    console.warn(`[Instagram Bot Auto-Reply Warning] Message not sent via Meta: ${result.error}`);
+  }
+  return result;
 }
 
 /**
@@ -107,6 +138,17 @@ function parseNameAndPhone(input, fallbackId) {
 export const handleInstagramMessage = async (req, res) => {
   const body = req.body || {};
   console.log('[Instagram Webhook Received]', JSON.stringify(body));
+
+  const firstMsg = body.entry?.[0]?.messaging?.[0] || body.entry?.[0]?.changes?.[0]?.value;
+  latestInstagramWebhookEvent = {
+    receivedAt: new Date().toISOString(),
+    object: body.object,
+    senderId: firstMsg?.sender?.id || firstMsg?.from?.id || null,
+    text: firstMsg?.message?.text || firstMsg?.text || null,
+    status: 'Webhook event processed',
+    count: (latestInstagramWebhookEvent.count || 0) + 1,
+    raw: body,
+  };
 
   // Acknowledge receipt immediately to satisfy Meta's webhook requirement
   if (body.object !== 'instagram' && body.object !== 'page') {
@@ -180,6 +222,22 @@ async function deleteInstagramSession(senderId) {
   }
 }
 
+async function logInstagramMessage(senderId, customerName, direction, sender, text) {
+  try {
+    await supabase.from('whatsapp_messages').insert([
+      {
+        phone: `ig_${senderId}`,
+        customer_name: customerName,
+        direction,
+        sender,
+        message_text: text,
+      },
+    ]);
+  } catch (err) {
+    console.warn('[Instagram Message Log Error]', err.message);
+  }
+}
+
 /**
  * Process single user message with multi-turn session state
  */
@@ -189,11 +247,22 @@ async function processIncomingInstagramMessage(senderId, text) {
   try {
     // 1. Check existing session for this Instagram user
     const session = await getInstagramSession(senderId);
+    const customerName = session?.customer_name || `Instagram User (${senderId.slice(-4)})`;
+
+    // 2. Log inbound customer message to Supabase
+    await logInstagramMessage(senderId, customerName, 'inbound', 'customer', text);
+
+    // 3. Check for Human Takeover (silences bot if staff has paused it)
+    if (session && session.step === 'human_takeover') {
+      console.log(`[Instagram Bot Silenced] Human takeover active for ig_${senderId}. Skipping automated reply.`);
+      return;
+    }
 
     // Reset command
     if (normalizedText === 'reset' || normalizedText === 'start' || normalizedText === 'menu') {
       await deleteInstagramSession(senderId);
       await sendInstagramReply(senderId, WELCOME_TEXT);
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
       return;
     }
 
@@ -213,6 +282,7 @@ async function processIncomingInstagramMessage(senderId, text) {
           `To prepare your customized quote and check garage slot availability, please reply with your Name and Phone Number (e.g. Rahul Sharma, +91 98765 43210):`;
         
         await sendInstagramReply(senderId, reply);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
       } else {
         // Send menu
         await setInstagramSession(senderId, {
@@ -220,6 +290,7 @@ async function processIncomingInstagramMessage(senderId, text) {
         });
 
         await sendInstagramReply(senderId, WELCOME_TEXT);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
       }
       return;
     }
@@ -256,13 +327,13 @@ async function processIncomingInstagramMessage(senderId, text) {
         `We will reach out to you on ${phone} shortly with quotation details and garage slot timings!`;
 
       await sendInstagramReply(senderId, confirmationMsg);
+      await logInstagramMessage(senderId, name || customerName, 'outbound', 'bot', confirmationMsg);
     }
   } catch (err) {
     console.error('[Instagram Bot Session Error]', err);
-    await sendInstagramReply(
-      senderId,
-      `Thank you for contacting Signature Detailing! We have noted your request and our team will get back to you shortly.`
-    );
+    const fallbackMsg = `Thank you for contacting Signature Detailing! We have noted your request and our team will get back to you shortly.`;
+    await sendInstagramReply(senderId, fallbackMsg);
+    await logInstagramMessage(senderId, 'Customer', 'outbound', 'bot', fallbackMsg);
   }
 }
 

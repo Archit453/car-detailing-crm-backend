@@ -357,7 +357,76 @@ async function runTests() {
     assert(signupRes.status === 200, 'POST /api/inbox/whatsapp/embedded-signup returns 200 OK');
     assert(signupJson.data?.coexistenceActive === true, 'Coexistence confirmed active from signup');
 
-    // Test 29: POST /api/auth/logout clears session
+    // Test 29: GET /api/inbox/instagram/conversations (Protected)
+    const igConvRes = await fetch(`${baseUrl}/api/inbox/instagram/conversations`, {
+      headers: { Cookie: sessionCookie },
+    });
+    const igConvJson = await igConvRes.json();
+    assert(igConvRes.status === 200, 'GET /api/inbox/instagram/conversations returns 200 OK');
+    assert(Array.isArray(igConvJson.data), 'GET /api/inbox/instagram/conversations returns array of conversations');
+
+    // Test 30: GET /api/inbox/instagram/status (Protected)
+    const igStatusRes = await fetch(`${baseUrl}/api/inbox/instagram/status`, {
+      headers: { Cookie: sessionCookie },
+    });
+    const igStatusJson = await igStatusRes.json();
+    assert(igStatusRes.status === 200, 'GET /api/inbox/instagram/status returns 200 OK');
+    assert(igStatusJson.data?.accountInfo?.username === 'creationindia_', 'Status returns connected account @creationindia_');
+
+    // Test 31: POST /api/inbox/instagram/send with invalid non-numeric ID returns 400 Bad Request
+    const igSendBadIdRes = await fetch(`${baseUrl}/api/inbox/instagram/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({
+        senderId: 'arc____hit_test',
+        message: 'Hello test',
+      }),
+    });
+    const igSendBadIdJson = await igSendBadIdRes.json();
+    assert(igSendBadIdRes.status === 400, 'POST /api/inbox/instagram/send rejects non-numeric recipient ID with 400');
+    assert(
+      igSendBadIdJson.message?.includes('numeric') || igSendBadIdJson.error?.message?.includes('numeric'),
+      'POST /api/inbox/instagram/send provides clear message explaining numeric IGSID requirement'
+    );
+
+    // Test 32: POST /api/inbox/instagram/send with empty message returns 400
+    const igSendEmptyRes = await fetch(`${baseUrl}/api/inbox/instagram/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({
+        senderId: '17841400123456789',
+        message: '   ',
+      }),
+    });
+    assert(igSendEmptyRes.status === 400, 'POST /api/inbox/instagram/send rejects empty message with 400');
+
+    // Test 33: POST /api/inbox/instagram/test-ping simulates incoming DM
+    const igPingRes = await fetch(`${baseUrl}/api/inbox/instagram/test-ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({
+        senderId: 'arc____hit_sim_unit_test',
+        message: 'Unit test simulation message',
+      }),
+    });
+    const igPingJson = await igPingRes.json();
+    assert(igPingRes.status === 200, 'POST /api/inbox/instagram/test-ping returns 200 OK');
+    assert(igPingJson.data?.simulated === true, 'Simulation test ping succeeds and triggers handler');
+
+    // Test 34: POST /api/inbox/instagram/bot-toggle pauses/resumes bot
+    const igPauseBotRes = await fetch(`${baseUrl}/api/inbox/instagram/bot-toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({
+        senderId: 'arc____hit_sim_unit_test',
+        botActive: false,
+      }),
+    });
+    const igPauseBotJson = await igPauseBotRes.json();
+    assert(igPauseBotRes.status === 200, 'POST /api/inbox/instagram/bot-toggle returns 200 OK');
+    assert(igPauseBotJson.data?.botPaused === true, 'Instagram bot confirmed paused');
+
+    // Test 35: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

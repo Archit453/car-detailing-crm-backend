@@ -4,6 +4,11 @@ import { ApiError } from '../utils/apiError.js';
 import { successResponse, createdResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendMetaWhatsAppMessage } from './whatsapp.controller.js';
+import {
+  sendInstagramOutboundMessage,
+  latestInstagramWebhookEvent,
+  handleInstagramMessage,
+} from './instagram.controller.js';
 
 const assertConfigured = () => {
   if (!isConfigured) {
@@ -241,4 +246,399 @@ export const handleEmbeddedSignup = asyncHandler(async (req, res) => {
     },
     'WhatsApp Coexistence successfully connected to your CRM!'
   );
+});
+
+/**
+ * ============================================================================
+ * INSTAGRAM LIVE INBOX CONTROLLER
+ * ============================================================================
+ */
+
+/**
+ * @desc    Get all active Instagram conversations with latest message preview
+ * @route   GET /api/inbox/instagram/conversations
+ * @access  Protected (Admin)
+ */
+export const getInstagramConversations = asyncHandler(async (req, res) => {
+  assertConfigured();
+
+  // Fetch recent messages matching 'ig_%'
+  const { data: messages, error } = await supabase
+    .from('whatsapp_messages')
+    .select('*')
+    .like('phone', 'ig_%')
+    .order('created_at', { ascending: false })
+    .limit(300);
+
+  if (error) {
+    if (error.code === 'PGRST205') {
+      return successResponse(res, [], 'Instagram Inbox online');
+    }
+    throw new ApiError(500, `Failed to fetch Instagram conversations: ${error.message}`, error);
+  }
+
+  // Fetch bot states for Instagram sessions
+  const { data: sessions } = await supabase
+    .from('whatsapp_sessions')
+    .select('phone, step, customer_name')
+    .like('phone', 'ig_%');
+
+  const sessionMap = new Map((sessions || []).map((s) => [s.phone, s]));
+
+  // Group latest message per Instagram sender
+  const conversationsMap = new Map();
+  for (const msg of messages || []) {
+    if (!conversationsMap.has(msg.phone)) {
+      const rawSenderId = msg.phone.replace(/^ig_/, '');
+      const sess = sessionMap.get(msg.phone);
+      conversationsMap.set(msg.phone, {
+        senderId: rawSenderId,
+        phoneKey: msg.phone,
+        customer_name: msg.customer_name || `Instagram User (${rawSenderId.slice(-4)})`,
+        last_message: msg.message_text,
+        last_message_at: msg.created_at,
+        last_sender: msg.sender,
+        direction: msg.direction,
+        botPaused: sess?.step === 'human_takeover',
+      });
+    }
+  }
+
+  const conversations = Array.from(conversationsMap.values());
+  return successResponse(res, conversations, 'Instagram conversations retrieved successfully');
+});
+
+/**
+ * @desc    Get full message thread for a specific Instagram user
+ * @route   GET /api/inbox/instagram/messages/:senderId
+ * @access  Protected (Admin)
+ */
+export const getInstagramMessages = asyncHandler(async (req, res) => {
+  assertConfigured();
+  const rawId = req.params.senderId;
+  const cleanId = rawId.replace(/^ig_/, '').trim();
+
+  if (!cleanId) {
+    throw new ApiError(400, 'Invalid Instagram sender ID parameter');
+  }
+
+  const phoneKey = `ig_${cleanId}`;
+
+  const { data: messages, error } = await supabase
+    .from('whatsapp_messages')
+    .select('*')
+    .eq('phone', phoneKey)
+    .order('created_at', { ascending: true })
+    .limit(150);
+
+  if (error) {
+    if (error.code === 'PGRST205') {
+      return successResponse(res, [], 'Message thread empty');
+    }
+    throw new ApiError(500, `Failed to fetch message thread: ${error.message}`, error);
+  }
+
+  // Check if bot is paused for this Instagram user
+  let botPaused = false;
+  try {
+    const { data: session } = await supabase
+      .from('whatsapp_sessions')
+      .select('step')
+      .eq('phone', phoneKey)
+      .single();
+    botPaused = session?.step === 'human_takeover';
+  } catch (err) {
+    // Graceful fallback
+  }
+
+  return successResponse(res, messages || [], 'Instagram message thread retrieved successfully', 200, { botPaused });
+});
+
+/**
+ * @desc    Send manual outbound Instagram reply to customer
+ * @route   POST /api/inbox/instagram/send
+ * @access  Protected (Admin)
+ */
+export const sendInstagramManualMessage = asyncHandler(async (req, res) => {
+  assertConfigured();
+  const { senderId, message, customerName } = req.body || {};
+
+  if (!senderId || typeof senderId !== 'string') {
+    throw new ApiError(400, 'Valid Instagram sender ID is required');
+  }
+
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    throw new ApiError(400, 'Message text cannot be empty');
+  }
+
+  const cleanId = senderId.replace(/^ig_/, '').trim();
+  const phoneKey = `ig_${cleanId}`;
+  const trimmedMessage = message.trim();
+
+  // 1. Send via Meta Instagram Graph API
+  const sendResult = await sendInstagramOutboundMessage(cleanId, trimmedMessage);
+
+  // If Meta API failed, DO NOT pretend success! Throw clear error so UI shows red toast!
+  if (!sendResult.success) {
+    throw new ApiError(
+      400,
+      `Instagram delivery failed: ${sendResult.error}`
+    );
+  }
+
+  // 2. Automatically activate Human Takeover (silences bot for this customer)
+  try {
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: phoneKey,
+      step: 'human_takeover',
+      customer_name: customerName || null,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[Session update error]', err.message);
+  }
+
+  // 3. Log outbound agent message in database
+  const { data: savedMessage, error } = await supabase
+    .from('whatsapp_messages')
+    .insert([
+      {
+        phone: phoneKey,
+        customer_name: customerName || `Instagram User (${cleanId.slice(-4)})`,
+        direction: 'outbound',
+        sender: 'agent',
+        message_text: trimmedMessage,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    return createdResponse(
+      res,
+      {
+        id: 'temp-' + Date.now(),
+        senderId: cleanId,
+        customer_name: customerName || `Instagram User (${cleanId.slice(-4)})`,
+        direction: 'outbound',
+        sender: 'agent',
+        message_text: trimmedMessage,
+        created_at: new Date().toISOString(),
+        human_takeover: true,
+        meta_api_result: sendResult,
+      },
+      'Instagram message dispatched successfully (session updated to human takeover)'
+    );
+  }
+
+  return createdResponse(
+    res,
+    {
+      ...savedMessage,
+      human_takeover: true,
+      meta_api_result: sendResult,
+    },
+    'Instagram message sent and logged successfully'
+  );
+});
+
+/**
+ * @desc    Toggle automated bot pause / resume for an Instagram user
+ * @route   POST /api/inbox/instagram/bot-toggle
+ * @access  Protected (Admin)
+ */
+export const toggleInstagramBotStatus = asyncHandler(async (req, res) => {
+  assertConfigured();
+  const { senderId, botActive } = req.body || {};
+
+  if (!senderId || typeof senderId !== 'string') {
+    throw new ApiError(400, 'Valid Instagram sender ID is required');
+  }
+
+  if (typeof botActive !== 'boolean') {
+    throw new ApiError(400, 'botActive boolean flag is required (true to resume, false to pause)');
+  }
+
+  const cleanId = senderId.replace(/^ig_/, '').trim();
+  const phoneKey = `ig_${cleanId}`;
+
+  if (botActive) {
+    // Resume bot
+    try {
+      await supabase
+        .from('whatsapp_sessions')
+        .delete()
+        .eq('phone', phoneKey);
+    } catch (err) {
+      console.warn('[Resume Instagram bot error]', err.message);
+    }
+
+    return successResponse(res, { senderId: cleanId, botPaused: false }, 'Instagram bot resumed successfully');
+  } else {
+    // Pause bot (human takeover)
+    try {
+      await supabase
+        .from('whatsapp_sessions')
+        .upsert({
+          phone: phoneKey,
+          step: 'human_takeover',
+          updated_at: new Date().toISOString(),
+        });
+    } catch (err) {
+      console.warn('[Pause Instagram bot error]', err.message);
+    }
+
+    return successResponse(res, { senderId: cleanId, botPaused: true }, 'Instagram bot paused for human takeover');
+  }
+});
+
+/**
+ * @desc    Get real-time Instagram Webhook & account health status
+ * @route   GET /api/inbox/instagram/status
+ * @access  Protected (Admin)
+ */
+export const getInstagramWebhookStatus = asyncHandler(async (req, res) => {
+  const token = config.instagram.pageAccessToken;
+  const isConfigured = Boolean(token);
+
+  return successResponse(
+    res,
+    {
+      webhookUrl: 'https://car-detailing-crm-backend.vercel.app/api/webhook/instagram',
+      verifyToken: config.instagram.verifyToken,
+      tokenConfigured: isConfigured,
+      tokenPrefix: isConfigured ? token.slice(0, 10) + '...' : null,
+      accountInfo: {
+        username: 'creationindia_',
+        accountType: 'MEDIA_CREATOR',
+      },
+      latestEvent: latestInstagramWebhookEvent,
+    },
+    'Instagram Webhook status retrieved successfully'
+  );
+});
+
+/**
+ * @desc    Simulate/test incoming Instagram DM for instant dashboard verification
+ * @route   POST /api/inbox/instagram/test-ping
+ * @access  Protected (Admin)
+ */
+export const triggerInstagramTestPing = asyncHandler(async (req, res) => {
+  const { senderId = 'arc____hit_simulated', message = 'Hello from simulated DM test' } = req.body || {};
+
+  const simulatedPayload = {
+    object: 'instagram',
+    entry: [
+      {
+        id: '29347217818200339',
+        messaging: [
+          {
+            sender: { id: senderId },
+            recipient: { id: '29347217818200339' },
+            timestamp: Date.now(),
+            message: {
+              mid: 'sim_mid_' + Date.now(),
+              text: message,
+            },
+          },
+        ],
+      },
+    ],
+  };
+
+  // Process via the real webhook handler
+  const mockReq = { body: simulatedPayload };
+  const mockRes = {
+    status: () => ({ json: (d) => d }),
+  };
+
+  await handleInstagramMessage(mockReq, mockRes);
+
+  return successResponse(
+    res,
+    {
+      simulated: true,
+      senderId,
+      message,
+      event: latestInstagramWebhookEvent,
+    },
+    'Simulated Instagram message dispatched successfully'
+  );
+});
+
+/**
+ * @desc    Sync active conversations directly from Meta Instagram Graph API
+ * @route   POST /api/inbox/instagram/sync
+ * @access  Protected (Admin)
+ */
+export const syncInstagramConversations = asyncHandler(async (req, res) => {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    throw new ApiError(500, 'No Instagram Access Token configured');
+  }
+
+  try {
+    const url = `https://graph.instagram.com/v21.0/me/conversations?fields=id,updated_time,participants,messages{id,message,from,to,created_time}&access_token=${encodeURIComponent(token)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new ApiError(data.error?.code === 190 ? 401 : 400, data.error?.message || 'Failed to query Meta conversations API');
+    }
+
+    const conversations = data.data || [];
+    let importedCount = 0;
+
+    for (const conv of conversations) {
+      const otherParticipant = conv.participants?.data?.find((p) => p.username !== 'creationindia_') || conv.participants?.data?.[0];
+      if (!otherParticipant) continue;
+
+      const igsid = otherParticipant.id;
+      const username = otherParticipant.username || `Instagram User (${igsid.slice(-4)})`;
+      const phoneKey = `ig_${igsid}`;
+
+      if (Array.isArray(conv.messages?.data)) {
+        for (const msg of conv.messages.data) {
+          const isFromCustomer = msg.from?.id === igsid;
+          const direction = isFromCustomer ? 'inbound' : 'outbound';
+          const sender = isFromCustomer ? 'customer' : 'agent';
+          const text = msg.message;
+
+          if (text) {
+            try {
+              await supabase.from('whatsapp_messages').upsert({
+                phone: phoneKey,
+                customer_name: username,
+                direction,
+                sender,
+                message_text: text,
+                created_at: msg.created_time || new Date().toISOString(),
+              }, { onConflict: 'id' });
+              importedCount++;
+            } catch (err) {
+              // Ignore individual message conflict
+            }
+          }
+        }
+      }
+    }
+
+    return successResponse(
+      res,
+      {
+        count: conversations.length,
+        importedMessages: importedCount,
+        conversations,
+        notice: conversations.length === 0
+          ? 'Meta returned 0 conversations. Please verify in Instagram mobile app: Settings > Messages and story replies > Message controls > Connected tools > "Allow access to messages" is toggled ON, and app is switched to Live mode in Meta Developer Portal.'
+          : 'Conversations synced successfully from Meta Graph API',
+      },
+      conversations.length === 0
+        ? 'No conversations found on Meta Graph API yet'
+        : `Successfully synced ${conversations.length} conversation(s) from Meta Graph API`
+    );
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, `Meta sync failed: ${err.message}`, err);
+  }
 });

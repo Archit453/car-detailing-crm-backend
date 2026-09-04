@@ -90,6 +90,17 @@ h1, h2, h3, h4, h5, h6, .font-display {
   border-left: 3px solid #10b981 !important;
 }
 
+.conversation-item-ig-active {
+  background: rgba(39, 39, 42, 0.8) !important;
+  border-left: 3px solid #ec4899 !important;
+}
+
+.bubble-ig-outbound {
+  background: linear-gradient(135deg, #e11d48 0%, #db2777 50%, #c026d3 100%);
+  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.3);
+  color: #ffffff;
+}
+
 /* Pulse animation for live dot */
 @keyframes pulse-ring {
   0% { transform: scale(0.95); opacity: 0.8; }

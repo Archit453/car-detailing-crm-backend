@@ -5,28 +5,36 @@ import {
   sendManualMessage,
   toggleBotStatus,
   handleEmbeddedSignup,
+  getInstagramConversations,
+  getInstagramMessages,
+  sendInstagramManualMessage,
+  toggleInstagramBotStatus,
+  getInstagramWebhookStatus,
+  triggerInstagramTestPing,
+  syncInstagramConversations,
 } from '../controllers/inbox.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
 const router = Router();
 
-// Apply authentication to all WhatsApp CRM inbox routes
+// Apply authentication to all CRM inbox routes
 router.use(requireAuth);
 
-// Get list of active conversations
+// WhatsApp Live Inbox Routes
 router.get('/whatsapp/conversations', getConversations);
-
-// Get full conversation history with a specific customer
 router.get('/whatsapp/messages/:phone', getMessagesByPhone);
-
-// Send manual reply to customer via WhatsApp
 router.post('/whatsapp/send', sendManualMessage);
-
-// Toggle automated bot pause / resume for a customer
 router.post('/whatsapp/bot-toggle', toggleBotStatus);
-
-// Complete Meta Embedded Signup for WhatsApp Coexistence
 router.post('/whatsapp/embedded-signup', handleEmbeddedSignup);
+
+// Instagram Live Inbox Routes
+router.get('/instagram/conversations', getInstagramConversations);
+router.get('/instagram/messages/:senderId', getInstagramMessages);
+router.post('/instagram/send', sendInstagramManualMessage);
+router.post('/instagram/bot-toggle', toggleInstagramBotStatus);
+router.get('/instagram/status', getInstagramWebhookStatus);
+router.post('/instagram/test-ping', triggerInstagramTestPing);
+router.post('/instagram/sync', syncInstagramConversations);
 
 export default router;
 
