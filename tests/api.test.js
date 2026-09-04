@@ -12,6 +12,15 @@ import {
   parseNameAndPhone,
   isDuplicateInstagramMessage,
 } from '../src/controllers/instagram.controller.js';
+import {
+  WHATSAPP_SERVICES_LIST,
+  WHATSAPP_SERVICE_BUTTONS_P1,
+  WHATSAPP_SERVICE_BUTTONS_P2,
+  WHATSAPP_REENGAGE_BUTTONS,
+  WHATSAPP_MORE_HELP_BUTTONS_P1,
+  WHATSAPP_MORE_HELP_BUTTONS_P2,
+  sendMetaWhatsAppMessage,
+} from '../src/controllers/whatsapp.controller.js';
 
 async function runTests() {
   console.log('🧪 Starting API Unit & Integration Verification (with Auth & KeepAlive)...\n');
@@ -989,6 +998,484 @@ async function runTests() {
       'ig_test_more_help_user',
       'ig_test_takeover_user',
     ]);
+
+    // Test: WhatsApp Interactive List & Button Templates Compliance
+    assert(WHATSAPP_SERVICES_LIST.button.length <= 20, 'WHATSAPP_SERVICES_LIST button title is <= 20 chars');
+    assert(WHATSAPP_SERVICES_LIST.sections.length === 2, 'WHATSAPP_SERVICES_LIST contains exactly 2 sections');
+    const totalWaListRows = WHATSAPP_SERVICES_LIST.sections.reduce((acc, s) => acc + s.rows.length, 0);
+    assert(totalWaListRows === 5, 'WHATSAPP_SERVICES_LIST provides all 5 detailing packages');
+    assert(
+      WHATSAPP_SERVICES_LIST.sections.every(s => s.rows.every(r => r.title.length <= 24 && r.id)),
+      'WHATSAPP_SERVICES_LIST rows meet Meta WhatsApp List constraints (title <= 24 chars, valid id)'
+    );
+
+    // Test: WhatsApp Quick Reply Button Limits (max 3 buttons, <= 20 chars per title)
+    assert(WHATSAPP_SERVICE_BUTTONS_P1.length <= 3, 'WHATSAPP_SERVICE_BUTTONS_P1 has max 3 buttons');
+    assert(WHATSAPP_SERVICE_BUTTONS_P1.every(b => b.title.length <= 20), 'WHATSAPP_SERVICE_BUTTONS_P1 button titles <= 20 chars');
+    assert(WHATSAPP_SERVICE_BUTTONS_P2.length <= 3, 'WHATSAPP_SERVICE_BUTTONS_P2 has max 3 buttons');
+    assert(WHATSAPP_SERVICE_BUTTONS_P2.every(b => b.title.length <= 20), 'WHATSAPP_SERVICE_BUTTONS_P2 button titles <= 20 chars');
+    assert(WHATSAPP_REENGAGE_BUTTONS.length === 2, 'WHATSAPP_REENGAGE_BUTTONS has 2 buttons (YES/NO)');
+    assert(WHATSAPP_REENGAGE_BUTTONS.every(b => b.title.length <= 20), 'WHATSAPP_REENGAGE_BUTTONS button titles <= 20 chars');
+    assert(WHATSAPP_MORE_HELP_BUTTONS_P1.length <= 3, 'WHATSAPP_MORE_HELP_BUTTONS_P1 has max 3 buttons');
+    assert(WHATSAPP_MORE_HELP_BUTTONS_P1.every(b => b.title.length <= 20), 'WHATSAPP_MORE_HELP_BUTTONS_P1 button titles <= 20 chars');
+    assert(WHATSAPP_MORE_HELP_BUTTONS_P2.length <= 3, 'WHATSAPP_MORE_HELP_BUTTONS_P2 has max 3 buttons');
+    assert(WHATSAPP_MORE_HELP_BUTTONS_P2.every(b => b.title.length <= 20), 'WHATSAPP_MORE_HELP_BUTTONS_P2 button titles <= 20 chars');
+
+    // Test: sendMetaWhatsAppMessage simulated interactive list & button payloads
+    const simListRes = await sendMetaWhatsAppMessage('919876543210', 'Choose a service:', null, { list: WHATSAPP_SERVICES_LIST });
+    assert(simListRes.simulated === true, 'sendMetaWhatsAppMessage simulates when credentials not configured');
+    assert(simListRes.type === 'interactive', 'sendMetaWhatsAppMessage sets type to interactive for list');
+    assert(simListRes.payload?.interactive?.type === 'list', 'sendMetaWhatsAppMessage interactive payload type is list');
+    assert(simListRes.payload?.interactive?.action?.sections?.length === 2, 'sendMetaWhatsAppMessage includes 2 sections');
+
+    const simButtonRes = await sendMetaWhatsAppMessage('919876543210', 'Choose an option:', null, { buttons: WHATSAPP_REENGAGE_BUTTONS });
+    assert(simButtonRes.type === 'interactive', 'sendMetaWhatsAppMessage sets type to interactive for buttons');
+    assert(simButtonRes.payload?.interactive?.type === 'button', 'sendMetaWhatsAppMessage interactive payload type is button');
+    assert(simButtonRes.payload?.interactive?.action?.buttons?.length === 2, 'sendMetaWhatsAppMessage includes 2 quick reply buttons');
+
+    // Test: POST /api/inbox/whatsapp/send supports list and buttons
+    const waSendListRes = await fetch(`${baseUrl}/api/inbox/whatsapp/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({
+        phone: '919876543210',
+        customerName: 'Test WA Customer',
+        list: WHATSAPP_SERVICES_LIST,
+      }),
+    });
+    assert([200, 201].includes(waSendListRes.status), 'POST /api/inbox/whatsapp/send accepts interactive list payload');
+
+    const waSendBtnRes = await fetch(`${baseUrl}/api/inbox/whatsapp/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({
+        phone: '919876543210',
+        customerName: 'Test WA Customer',
+        message: 'Can we help you with anything else?',
+        buttons: WHATSAPP_MORE_HELP_BUTTONS_P1,
+      }),
+    });
+    assert([200, 201].includes(waSendBtnRes.status), 'POST /api/inbox/whatsapp/send accepts interactive button payload');
+
+    // Test: WhatsApp Webhook handling interactive list_reply from customer
+    const waListReplyWebhookRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Vikram WA' }, wa_id: '919999900001' }],
+                  messages: [
+                    {
+                      from: '919999900001',
+                      id: 'wamid.list.01',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'list_reply',
+                        list_reply: {
+                          id: '1',
+                          title: '🛡️ PPF',
+                          description: 'Self-healing paint protection film',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waListReplyWebhookRes.status === 200, 'Webhook handles interactive list_reply');
+
+    const { data: waSession1 } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900001')
+      .single();
+    assert(waSession1?.step === 'awaiting_name', 'Interactive list_reply advances session to awaiting_name');
+    assert(waSession1?.selected_service === 'PPF', 'Interactive list_reply maps id 1 to PPF');
+
+    // Test: User provides Name and Phone to complete initial registration
+    const waNamePhoneWebhookRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Vikram WA' }, wa_id: '919999900001' }],
+                  messages: [
+                    {
+                      from: '919999900001',
+                      id: 'wamid.text.details',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'text',
+                      text: { body: 'Vikram Malhotra, 9999900001' },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waNamePhoneWebhookRes.status === 200, 'Webhook handles customer name and phone');
+
+    const { data: waSessionCompleted } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900001')
+      .single();
+    assert(waSessionCompleted?.step === 'completed', 'Session transitions to completed after lead created');
+    assert(waSessionCompleted?.customer_name === 'Vikram Malhotra', 'Customer name recorded accurately');
+
+    // Test: Completed customer messages again (Returning Customer Re-engagement Prompt)
+    const waReturnMsgRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Vikram WA' }, wa_id: '919999900001' }],
+                  messages: [
+                    {
+                      from: '919999900001',
+                      id: 'wamid.text.return',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'text',
+                      text: { body: 'Hello again!' },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waReturnMsgRes.status === 200, 'Webhook handles returning customer greeting');
+
+    const { data: waSessionReengage } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900001')
+      .single();
+    assert(waSessionReengage?.step === 'awaiting_reengagement_decision', 'Returning customer advances to awaiting_reengagement_decision');
+
+    // Test: Customer clicks YES button (REENGAGE_YES)
+    const waYesBtnRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Vikram WA' }, wa_id: '919999900001' }],
+                  messages: [
+                    {
+                      from: '919999900001',
+                      id: 'wamid.btn.yes',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'button_reply',
+                        button_reply: {
+                          id: 'REENGAGE_YES',
+                          title: '✅ Yes',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waYesBtnRes.status === 200, 'Webhook handles REENGAGE_YES button tap');
+
+    const { data: waSessionAddService } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900001')
+      .single();
+    assert(waSessionAddService?.step === 'awaiting_additional_service', 'YES button advances session to awaiting_additional_service');
+
+    // Test: Customer selects another service via interactive list_reply (id 2 -> Ceramic Coating)
+    const waAddServiceListRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Vikram WA' }, wa_id: '919999900001' }],
+                  messages: [
+                    {
+                      from: '919999900001',
+                      id: 'wamid.list.add_service',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'list_reply',
+                        list_reply: {
+                          id: '2',
+                          title: '✨ Ceramic Coating',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waAddServiceListRes.status === 200, 'Webhook handles additional service list_reply');
+
+    const { data: waSessionAddCompleted } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900001')
+      .single();
+    assert(waSessionAddCompleted?.step === 'completed', 'Additional service selection completes directly without asking for phone/name');
+    assert(waSessionAddCompleted?.selected_service === 'Ceramic Coating', 'Selected service updated to Ceramic Coating');
+
+    // Test: Returning customer selects NO button (REENGAGE_NO) -> awaiting_more_help
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: '919999900002',
+      customer_name: 'Anita Roy',
+      selected_service: 'Interior Detailing',
+      step: 'completed',
+      updated_at: new Date().toISOString(),
+    });
+
+    const waReturnNoMsgRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Anita Roy' }, wa_id: '919999900002' }],
+                  messages: [
+                    {
+                      from: '919999900002',
+                      id: 'wamid.return.no_test',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'text',
+                      text: { body: 'Hey Signature Detailing' },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waReturnNoMsgRes.status === 200, 'Webhook advances returning customer to awaiting_reengagement');
+
+    const waNoBtnRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Anita Roy' }, wa_id: '919999900002' }],
+                  messages: [
+                    {
+                      from: '919999900002',
+                      id: 'wamid.btn.no',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'button_reply',
+                        button_reply: {
+                          id: 'REENGAGE_NO',
+                          title: '❌ No',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waNoBtnRes.status === 200, 'Webhook handles REENGAGE_NO button reply');
+
+    const { data: waSessionMoreHelp } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900002')
+      .single();
+    assert(waSessionMoreHelp?.step === 'awaiting_more_help', 'Selecting NO advances to awaiting_more_help');
+
+    // Test: Customer clicks "Nothing Else" (MORE_NOTHING) -> sets human_takeover
+    const waNothingBtnRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Anita Roy' }, wa_id: '919999900002' }],
+                  messages: [
+                    {
+                      from: '919999900002',
+                      id: 'wamid.btn.nothing',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'button_reply',
+                        button_reply: {
+                          id: 'MORE_NOTHING',
+                          title: '❌ Nothing Else',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waNothingBtnRes.status === 200, 'Webhook handles MORE_NOTHING button reply');
+
+    const { data: waSessionTakeover } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900002')
+      .single();
+    assert(waSessionTakeover?.step === 'human_takeover', 'MORE_NOTHING sets step to human_takeover (bot inactive)');
+
+    // Test: Customer clicks a service list row during human_takeover -> reactivates bot!
+    const waReactivateRes = await fetch(`${baseUrl}/api/webhook/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WHATSAPP_BUSINESS_ACCOUNT_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456789' },
+                  contacts: [{ profile: { name: 'Anita Roy' }, wa_id: '919999900002' }],
+                  messages: [
+                    {
+                      from: '919999900002',
+                      id: 'wamid.btn.reactivate',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      type: 'interactive',
+                      interactive: {
+                        type: 'list_reply',
+                        list_reply: {
+                          id: '3',
+                          title: '🚘 Paint Correction',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(waReactivateRes.status === 200, 'Webhook handles list row tap during human_takeover');
+
+    const { data: waSessionReactivated } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', '919999900002')
+      .single();
+    assert(waSessionReactivated?.step === 'completed', 'Bot reactivates from human_takeover and transitions to completed');
+    assert(waSessionReactivated?.selected_service === 'Paint Correction', 'Selected service updated to Paint Correction');
+
+    // Cleanup test sessions & leads
+    await supabase.from('whatsapp_sessions').delete().in('phone', ['919999900001', '919999900002']);
+    await supabase.from('leads').delete().in('phone', ['9999900001', '+919999900001', '919999900001']);
 
     // Test 47: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {

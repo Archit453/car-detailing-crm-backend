@@ -131,6 +131,9 @@ const elements = {
   btnResumeBotBanner: document.getElementById('btn-resume-bot-banner'),
   inboxMessagesContainer: document.getElementById('inbox-messages-container'),
   inboxQuickTemplates: document.getElementById('inbox-quick-templates'),
+  btnSendWaServices: document.getElementById('btn-send-wa-services'),
+  btnSendWaLocation: document.getElementById('btn-send-wa-location'),
+  btnSendWaPricing: document.getElementById('btn-send-wa-pricing'),
   inboxComposerBar: document.getElementById('inbox-composer-bar'),
   formInboxSend: document.getElementById('form-inbox-send'),
   inboxInputMessage: document.getElementById('inbox-input-message'),
@@ -329,6 +332,15 @@ function setupEventListeners() {
         elements.inboxInputMessage.focus();
       }
     });
+  }
+  if (elements.btnSendWaServices) {
+    elements.btnSendWaServices.addEventListener('click', handleSendWhatsAppServices);
+  }
+  if (elements.btnSendWaLocation) {
+    elements.btnSendWaLocation.addEventListener('click', handleSendWhatsAppLocation);
+  }
+  if (elements.btnSendWaPricing) {
+    elements.btnSendWaPricing.addEventListener('click', handleSendWhatsAppPricing);
   }
   if (elements.btnBotActive) {
     elements.btnBotActive.addEventListener('click', () => handleToggleBot(true));
@@ -1509,13 +1521,16 @@ async function handleToggleBot(forceActive = null) {
 /**
  * Render message bubbles inside chat pane
  */
+/**
+ * Render message bubbles inside chat pane
+ */
 function renderMessageThread() {
   if (!elements.inboxMessagesContainer) return;
 
   if (state.inbox.messages.length === 0) {
     elements.inboxMessagesContainer.innerHTML = `
       <div class="h-full flex flex-col items-center justify-center text-center p-6 text-zinc-500">
-        <i data-lucide="message-square" class="w-8 h-8 mb-2 opacity-40"></i>
+        <i data-lucide="message-square" class="w-8 h-8 mb-2 opacity-40 text-emerald-400"></i>
         <p class="text-xs">No recorded messages in this thread yet.</p>
         <p class="text-[11px] text-zinc-600 mt-1">Send a message below to reach out on WhatsApp.</p>
       </div>
@@ -1529,12 +1544,92 @@ function renderMessageThread() {
       const isCustomer = msg.direction === 'inbound';
       const isBot = msg.sender === 'bot';
       const timeStr = formatMessageClock(msg.created_at);
+      const rawText = msg.message_text || '';
+
+      // Check if incoming customer message is an interactive button or list tap response
+      const isButtonTap =
+        ['1', '2', '3', '4', '5', 'menu', 'location', 'reengage_yes', 'reengage_no', 'more_location', 'more_pricing', 'more_callback', 'more_whatsapp', 'more_website', 'more_nothing'].includes(rawText.trim().toLowerCase()) ||
+        rawText.includes('1. PPF') ||
+        rawText.includes('2. Ceramic') ||
+        rawText.includes('3. Correction') ||
+        rawText.includes('4. Interior') ||
+        rawText.includes('5. Full Detail') ||
+        rawText.includes('🛡️ PPF') ||
+        rawText.includes('✨ Ceramic Coating') ||
+        rawText.includes('🚘 Paint Correction') ||
+        rawText.includes('🧼 Interior Detail') ||
+        rawText.includes('🧼 Interior Detailing') ||
+        rawText.includes('🏎️ Full Detail') ||
+        rawText.includes('🏎️ Full Detailing') ||
+        rawText.includes('✅ Yes') ||
+        rawText.includes('❌ No') ||
+        rawText.includes('📍 Studio Location') ||
+        rawText.includes('💰 Pricing Packages') ||
+        rawText.includes('📞 Request Callback') ||
+        rawText.includes('🌐 Visit Website') ||
+        rawText.includes('💬 WhatsApp Support') ||
+        rawText.includes('❌ Nothing Else');
+
+      // Helper function to render in-bubble button / list cards matching Meta WhatsApp interactive templates
+      const renderInBubbleButtons = (buttons) => `
+        <div class="mt-3 pt-2 border-t border-white/10 flex flex-col gap-1.5 w-full">
+          ${buttons
+            .map(
+              (btn) => `
+            <div class="w-full text-center py-2 px-3 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-100 font-semibold text-xs border border-emerald-700/60 shadow-xs select-none transition flex items-center justify-center space-x-1.5">
+              <span>${escapeHtml(btn)}</span>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      `;
+
+      // Check if outbound bot or staff message delivered interactive buttons / list
+      let buttonPreviewHtml = '';
+      if (
+        rawText.includes('Please select a service to get started') ||
+        rawText.includes('Here are our Signature Detailing services') ||
+        rawText.includes('Which additional service would you like to explore') ||
+        rawText.includes('Which service are you interested in')
+      ) {
+        buttonPreviewHtml = renderInBubbleButtons([
+          '📋 View Packages 🚗 (Interactive Menu)',
+          '🛡️ PPF',
+          '✨ Ceramic Coating',
+          '🚘 Paint Correction',
+          '🧼 Interior Detailing',
+          '🏎️ Full Detailing Package',
+        ]);
+      } else if (rawText.includes('Would you like to explore another detailing service?')) {
+        buttonPreviewHtml = renderInBubbleButtons(['✅ Yes', '❌ No']);
+      } else if (rawText.includes('Can we help you with anything else?')) {
+        buttonPreviewHtml = renderInBubbleButtons([
+          '📍 Studio Location',
+          '💰 Pricing Packages',
+          '📞 Request Callback',
+          '🌐 Visit Website',
+          '❌ Nothing Else',
+        ]);
+      } else if (rawText.includes('Signature Detailing Studio Location:') || rawText.includes('Address: Studio 4')) {
+        buttonPreviewHtml = renderInBubbleButtons(['💰 Pricing Packages', '📞 Request Callback', '❌ Nothing Else']);
+      } else if (rawText.includes('Pricing & Packages:') || rawText.includes('Creation Detailing Packages')) {
+        buttonPreviewHtml = renderInBubbleButtons(['📞 Request Callback', '📍 Studio Location', '❌ Nothing Else']);
+      }
 
       if (isCustomer) {
+        const buttonBadge = isButtonTap
+          ? '<span class="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/60 text-[9px] font-semibold ml-1.5 inline-flex items-center">🖲️ Button Click</span>'
+          : '';
         return `
           <div class="flex flex-col items-start max-w-[85%] sm:max-w-[70%] animate-fade-in">
             <div class="px-4 py-2.5 rounded-2xl rounded-tl-xs bg-zinc-900/95 text-zinc-100 text-xs sm:text-sm border border-zinc-700/60 shadow-md leading-relaxed whitespace-pre-wrap select-text">
-              ${escapeHtml(msg.message_text)}
+              <div class="flex items-center space-x-1.5 text-[10px] text-emerald-400 font-bold mb-1">
+                <i data-lucide="message-square" class="w-3 h-3"></i>
+                <span>Customer</span>
+                ${buttonBadge}
+              </div>
+              ${escapeHtml(rawText)}
             </div>
             <span class="text-[10px] text-zinc-500 font-medium mt-1 ml-1.5">${escapeHtml(timeStr)}</span>
           </div>
@@ -1547,7 +1642,8 @@ function renderMessageThread() {
                 <i data-lucide="bot" class="w-3 h-3"></i>
                 <span>Automated Assistant</span>
               </div>
-              ${escapeHtml(msg.message_text)}
+              ${escapeHtml(rawText)}
+              ${buttonPreviewHtml}
             </div>
             <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
           </div>
@@ -1561,7 +1657,8 @@ function renderMessageThread() {
                 <i data-lucide="user-check" class="w-3 h-3"></i>
                 <span>You (Staff)</span>
               </div>
-              ${escapeHtml(msg.message_text)}
+              ${escapeHtml(rawText)}
+              ${buttonPreviewHtml}
             </div>
             <span class="text-[10px] text-zinc-500 font-medium mt-1 mr-1.5">${escapeHtml(timeStr)}</span>
           </div>
@@ -1574,6 +1671,168 @@ function renderMessageThread() {
 
   // Scroll to bottom
   elements.inboxMessagesContainer.scrollTop = elements.inboxMessagesContainer.scrollHeight;
+}
+
+/**
+ * Send all 5 Interactive Detailing Services to customer on WhatsApp via Interactive List Message
+ */
+async function handleSendWhatsAppServices() {
+  if (!state.inbox.activePhone) {
+    showToast('Please select a WhatsApp conversation first', 'warning');
+    return;
+  }
+
+  const phone = state.inbox.activePhone;
+  const customerName = state.inbox.activeCustomerName;
+
+  const servicesList = {
+    button: 'View Packages 🚗',
+    sections: [
+      {
+        title: 'Exterior Protection',
+        rows: [
+          { id: '1', title: '🛡️ PPF', description: 'Self-healing paint protection film' },
+          { id: '2', title: '✨ Ceramic Coating', description: '9H/10H deep gloss nano armor' },
+          { id: '3', title: '🚘 Paint Correction', description: 'Swirl, haze & scratch removal' },
+        ],
+      },
+      {
+        title: 'Interior & Full Detail',
+        rows: [
+          { id: '4', title: '🧼 Interior Detailing', description: 'Deep cabin steam clean & hygiene' },
+          { id: '5', title: '🏎️ Full Detail', description: 'Complete bumper-to-bumper transformation' },
+        ],
+      },
+    ],
+  };
+
+  await dispatchWhatsAppInteractiveMessage(
+    phone,
+    customerName,
+    'Here are our Signature Detailing services & packages. Tap "View Packages" below to select:',
+    { list: servicesList }
+  );
+}
+
+/**
+ * Send Studio Location with interactive quick reply buttons to customer on WhatsApp
+ */
+async function handleSendWhatsAppLocation() {
+  if (!state.inbox.activePhone) {
+    showToast('Please select a WhatsApp conversation first', 'warning');
+    return;
+  }
+
+  const phone = state.inbox.activePhone;
+  const customerName = state.inbox.activeCustomerName;
+
+  const locationText = `📍 Signature Detailing Studio Location:
+Studio 4, Auto Hub, Sector 48, Golf Course Extension Road, Gurgaon, Haryana 122018.
+
+Google Maps: https://maps.google.com/?q=Signature+Detailing+Gurgaon
+Timings: Monday - Sunday, 9:30 AM - 8:00 PM`;
+
+  const buttons = [
+    { id: 'MORE_PRICING', title: '💰 Pricing Packages' },
+    { id: 'MORE_CALLBACK', title: '📞 Request Callback' },
+    { id: 'MORE_NOTHING', title: '❌ Nothing Else' },
+  ];
+
+  await dispatchWhatsAppInteractiveMessage(
+    phone,
+    customerName,
+    locationText,
+    { buttons }
+  );
+}
+
+/**
+ * Send Pricing Overview with interactive quick reply buttons to customer on WhatsApp
+ */
+async function handleSendWhatsAppPricing() {
+  if (!state.inbox.activePhone) {
+    showToast('Please select a WhatsApp conversation first', 'warning');
+    return;
+  }
+
+  const phone = state.inbox.activePhone;
+  const customerName = state.inbox.activeCustomerName;
+
+  const pricingText = `💰 Signature Detailing Pricing & Packages:
+• 🛡️ Paint Protection Film (PPF): Starts at ₹55,000
+• ✨ Ceramic Coating (9H/10H): Starts at ₹18,000
+• 🚘 Paint Correction / Rubbing: Starts at ₹6,500
+• 🧼 Deep Interior Detailing: Starts at ₹3,500
+• 🏎️ Full Detailing Package: Starts at ₹24,000
+
+🌐 Explore website: https://weekly-steps-579379.framer.app/`;
+
+  const buttons = [
+    { id: 'MORE_CALLBACK', title: '📞 Request Callback' },
+    { id: 'MORE_LOCATION', title: '📍 Studio Location' },
+    { id: 'MORE_NOTHING', title: '❌ Nothing Else' },
+  ];
+
+  await dispatchWhatsAppInteractiveMessage(
+    phone,
+    customerName,
+    pricingText,
+    { buttons }
+  );
+}
+
+/**
+ * Helper to dispatch WhatsApp interactive message payload to backend
+ */
+async function dispatchWhatsAppInteractiveMessage(phone, customerName, text, options = {}) {
+  showToast('Sending interactive WhatsApp message...', 'info');
+
+  const tempMessage = {
+    phone,
+    customer_name: customerName,
+    direction: 'outbound',
+    sender: 'agent',
+    message_text: text,
+    created_at: new Date().toISOString(),
+  };
+
+  state.inbox.messages.push(tempMessage);
+  renderMessageThread();
+  updateBotStatusUI(true);
+
+  try {
+    const res = await fetch('/api/inbox/whatsapp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone,
+        customerName,
+        message: text,
+        buttons: options.buttons,
+        list: options.list,
+        interactive: options.interactive,
+      }),
+    });
+
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to dispatch interactive message');
+
+    showToast('Interactive WhatsApp message dispatched successfully!', 'success');
+    fetchConversations();
+  } catch (err) {
+    console.error('[Send Interactive WhatsApp Error]', err);
+    const idx = state.inbox.messages.indexOf(tempMessage);
+    if (idx !== -1) {
+      state.inbox.messages.splice(idx, 1);
+      renderMessageThread();
+    }
+    showToast(err.message, 'error');
+  }
 }
 
 /**
@@ -1660,9 +1919,12 @@ function formatMessageClock(isoString) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Expose openInboxChat and loadChatThread globally for inline onclick attributes
+// Expose openInboxChat, loadChatThread, and WhatsApp interactive actions globally
 window.openInboxChat = openInboxChat;
 window.loadChatThread = loadChatThread;
+window.handleSendWhatsAppServices = handleSendWhatsAppServices;
+window.handleSendWhatsAppLocation = handleSendWhatsAppLocation;
+window.handleSendWhatsAppPricing = handleSendWhatsAppPricing;
 
 /**
  * Launch Meta Embedded Signup Popup for WhatsApp Coexistence (Option 2)

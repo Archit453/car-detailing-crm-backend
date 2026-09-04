@@ -115,21 +115,23 @@ export const getMessagesByPhone = asyncHandler(async (req, res) => {
  */
 export const sendManualMessage = asyncHandler(async (req, res) => {
   assertConfigured();
-  const { phone, message, customerName } = req.body || {};
+  const { phone, message, customerName, buttons, list, interactive } = req.body || {};
 
   if (!phone || typeof phone !== 'string') {
     throw new ApiError(400, 'Valid customer phone number is required');
   }
 
-  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+  if (!interactive && !buttons && !list && (!message || typeof message !== 'string' || message.trim().length === 0)) {
     throw new ApiError(400, 'Message text cannot be empty');
   }
 
   const cleanPhone = phone.replace(/[^0-9]/g, '');
-  const trimmedMessage = message.trim();
+  const trimmedMessage = (typeof message === 'string' && message.trim().length > 0)
+    ? message.trim()
+    : (list?.body?.text || list?.body || interactive?.body?.text || 'Interactive Menu');
 
-  // 1. Send via Meta WhatsApp Cloud API
-  await sendMetaWhatsAppMessage(cleanPhone, trimmedMessage);
+  // 1. Send via Meta WhatsApp Cloud API (supports text, interactive buttons, or interactive lists)
+  await sendMetaWhatsAppMessage(cleanPhone, trimmedMessage, null, { buttons, list, interactive });
 
   // 2. Automatically activate Human Takeover (silences bot for this customer)
   try {
