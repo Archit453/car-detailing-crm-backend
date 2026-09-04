@@ -575,7 +575,218 @@ async function runTests() {
     const unauthIgCommentsRes = await fetch(`${baseUrl}/api/inbox/instagram/comments`);
     assert(unauthIgCommentsRes.status === 401, 'Unauthenticated GET /api/inbox/instagram/comments returns 401');
 
-    // Test 43: POST /api/auth/logout clears session
+    // Test 43: Webhook ignores outbound echo messages from own page account
+    const igEchoWebhookRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: '29347217818200339' },
+                recipient: { id: 'test_return_user_01' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_echo_123',
+                  text: 'Thank you! We will reach out shortly.',
+                  is_echo: true,
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(igEchoWebhookRes.status === 200, 'Echo webhook returns 200 OK');
+
+    // Test 44: Returning customer re-engagement flow (Yes/No decision)
+    // Step A: Set session to completed for test_return_user_01
+    const { supabase } = await import('../src/config/supabase.js');
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: 'ig_test_return_user_01',
+      step: 'completed',
+      customer_name: 'Harsh',
+      selected_service: 'PPF',
+      updated_at: new Date().toISOString(),
+    });
+
+    // Step B: Returning customer sends greeting message -> triggers awaiting_reengagement_decision
+    const returnGreetingRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_return_user_01' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: { mid: 'mid_ret_1', text: 'Hi again!' },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    assert(returnGreetingRes.status === 200, 'Returning customer greeting returns 200 OK');
+
+    // Verify session updated to awaiting_reengagement_decision
+    const { data: returnSession1 } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_return_user_01')
+      .single();
+    assert(returnSession1.step === 'awaiting_reengagement_decision', 'Session advances to awaiting_reengagement_decision');
+
+    // Step C: Customer taps YES -> advances to awaiting_additional_service
+    await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_return_user_01' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_ret_yes',
+                  text: '✅ Yes',
+                  quick_reply: { payload: 'REENGAGE_YES' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const { data: returnSession2 } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_return_user_01')
+      .single();
+    assert(returnSession2.step === 'awaiting_additional_service', 'Customer selecting YES advances to awaiting_additional_service');
+
+    // Step D: Customer selects Ceramic Coating -> confirms and resets to completed without asking for phone/name
+    await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_return_user_01' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_ret_service',
+                  text: '✨ Ceramic Coating',
+                  quick_reply: { payload: '2' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const { data: returnSession3 } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_return_user_01')
+      .single();
+    assert(returnSession3.step === 'completed', 'Session returns to completed after additional service interest logged');
+    assert(returnSession3.selected_service === 'Ceramic Coating', 'Selected service updated to Ceramic Coating');
+
+    // Test 45: Returning customer NO Path
+    // Step A: Set session to awaiting_reengagement_decision for test_return_user_02
+    await supabase.from('whatsapp_sessions').upsert({
+      phone: 'ig_test_return_user_02',
+      step: 'awaiting_reengagement_decision',
+      customer_name: 'Rahul',
+      selected_service: 'PPF',
+      updated_at: new Date().toISOString(),
+    });
+
+    // Step B: Customer selects NO
+    await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_return_user_02' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_ret_no',
+                  text: '❌ No',
+                  quick_reply: { payload: 'REENGAGE_NO' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const { data: returnSessionNo } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_return_user_02')
+      .single();
+    assert(returnSessionNo.step === 'awaiting_more_help', 'Customer selecting NO advances to awaiting_more_help');
+
+    // Step C: Customer selects "Nothing Else" -> marks human_takeover (bot_active = false)
+    await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_return_user_02' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_ret_nothing',
+                  text: '❌ Nothing Else',
+                  quick_reply: { payload: 'MORE_NOTHING' },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const { data: returnSessionNothing } = await supabase
+      .from('whatsapp_sessions')
+      .select('*')
+      .eq('phone', 'ig_test_return_user_02')
+      .single();
+    assert(returnSessionNothing.step === 'human_takeover', 'Selecting Nothing Else sets step to human_takeover');
+
+    // Cleanup test sessions
+    await supabase.from('whatsapp_sessions').delete().in('phone', ['ig_test_return_user_01', 'ig_test_return_user_02']);
+
+    // Test 46: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },
@@ -584,7 +795,7 @@ async function runTests() {
     assert(logoutRes.status === 200, 'POST /api/auth/logout returns 200 OK');
     assert(logoutSetCookie.includes('Max-Age=0'), 'Logout clears crm_session cookie with Max-Age=0');
 
-    // Test 44: 404 Route Not Found
+    // Test 47: 404 Route Not Found
     const notFoundRes = await fetch(`${baseUrl}/api/non-existent-endpoint`);
     const notFoundJson = await notFoundRes.json();
     assert(notFoundRes.status === 404, 'Undefined route returns 404 Not Found');
