@@ -285,34 +285,51 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
       replyText = `Great choice! ${matchedService} is one of our specialty services. ✨\n\nMay I know your full name?`;
     }
   } else if (session.step === 'awaiting_name') {
-    // Step 3: Collect name & create CRM lead
-    const customerName = incomingText || profileName || 'WhatsApp Customer';
-    const chosenService = session.selected_service || 'Ceramic Coating';
+    // Check if user clicked or sent another service number/keyword instead of their name
+    const reselectedService = SERVICE_MAP[incomingText.toLowerCase().trim()];
+    if (reselectedService) {
+      await supabase
+        .from('whatsapp_sessions')
+        .update({
+          selected_service: reselectedService,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('phone', fromNumber);
 
-    // Insert lead into Supabase leads table
-    const { error: leadError } = await supabase.from('leads').insert([
-      {
-        name: customerName,
-        phone: `+${fromNumber.replace('+', '')}`,
-        service: chosenService,
-        source: 'whatsapp',
-        status: 'new',
-      },
-    ]);
-
-    if (leadError) {
-      console.error('[WhatsApp Lead Error]', leadError);
+      replyText = `Updated! You selected: ${reselectedService} ✨\n\nMay I know your full name so our team can address you properly?`;
     } else {
-      console.log(`[WhatsApp Lead Created] ${customerName} (${fromNumber}) for ${chosenService}`);
+      // Step 3: Collect name & create CRM lead
+      const rawName = incomingText.trim();
+      const customerName = (rawName.length >= 2 && !/^\d+$/.test(rawName))
+        ? rawName
+        : (profileName && profileName !== 'WhatsApp Customer' ? profileName : 'WhatsApp Customer');
+      const chosenService = session.selected_service || 'Ceramic Coating';
+
+      // Insert lead into Supabase leads table
+      const { error: leadError } = await supabase.from('leads').insert([
+        {
+          name: customerName,
+          phone: `+${fromNumber.replace('+', '')}`,
+          service: chosenService,
+          source: 'whatsapp',
+          status: 'new',
+        },
+      ]);
+
+      if (leadError) {
+        console.error('[WhatsApp Lead Error]', leadError);
+      } else {
+        console.log(`[WhatsApp Lead Created] ${customerName} (${fromNumber}) for ${chosenService}`);
+      }
+
+      // Mark session completed / clean up
+      await supabase
+        .from('whatsapp_sessions')
+        .delete()
+        .eq('phone', fromNumber);
+
+      replyText = `Thank you, ${customerName}! 🎉\n\nWe have received your request for *${chosenService}*. Our detailing specialist will reach out to you shortly on this number.`;
     }
-
-    // Mark session completed / clean up
-    await supabase
-      .from('whatsapp_sessions')
-      .delete()
-      .eq('phone', fromNumber);
-
-    replyText = `Thank you, ${customerName}! 🎉\n\nWe have received your request for *${chosenService}*. Our detailing specialist will reach out to you shortly on this number.`;
   }
 
   // Log bot response to Live Inbox

@@ -325,20 +325,38 @@ export async function processIncomingInstagramComment(commentData) {
 /**
  * Parses customer name and phone from freeform text input
  */
-function parseNameAndPhone(input, fallbackId) {
+function parseNameAndPhone(input, fallbackId, existingName = null) {
   const cleanInput = input.trim();
-  
-  // Look for phone number (digits, optional +, space, hyphens)
-  const phoneMatch = cleanInput.match(/(\+?[0-9\s-]{7,15})/);
-  let phone = phoneMatch ? phoneMatch[0].trim().replace(/\s+/g, '') : `IG-${fallbackId.slice(-6)}`;
-  
+
+  // Extract phone number (standard mobile patterns: optional +, 10-15 digits with optional spaces/hyphens)
+  const phoneMatch = cleanInput.match(/(\+?[0-9][0-9\s-]{8,14}[0-9])/);
+  let phone = null;
+  let hasValidPhone = false;
+
+  if (phoneMatch) {
+    const rawPhone = phoneMatch[0].trim().replace(/\s+/g, '');
+    const digitsOnly = rawPhone.replace(/\D/g, '');
+    if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
+      phone = rawPhone;
+      hasValidPhone = true;
+    }
+  }
+
   // Extract name by removing the matched phone part
-  let name = cleanInput.replace(phoneMatch ? phoneMatch[0] : '', '').replace(/[,:-]/g, ' ').trim();
-  if (!name || name.length < 2) {
+  let extractedName = cleanInput
+    .replace(phoneMatch ? phoneMatch[0] : '', '')
+    .replace(/[,:/\-()]/g, ' ')
+    .trim();
+
+  // Determine cleanest customer name
+  let name = existingName;
+  if (extractedName.length >= 2 && !/^\d+$/.test(extractedName)) {
+    name = extractedName;
+  } else if (!name) {
     name = `Instagram User (${fallbackId.slice(-4)})`;
   }
 
-  return { name, phone };
+  return { name, phone, hasValidPhone };
 }
 
 /**
@@ -561,10 +579,49 @@ async function processIncomingInstagramMessage(senderId, text) {
 
     // State 2: Awaiting Name and Phone Number
     if (session.step === 'awaiting_contact') {
-      const { name, phone } = parseNameAndPhone(text, senderId);
+      // 1. Check if customer tapped or sent another service button instead of contact info
+      const reselectedService = SERVICE_MAP[normalizedText];
+      if (reselectedService) {
+        await setInstagramSession(senderId, {
+          ...session,
+          selected_service: reselectedService,
+        });
+
+        const reply =
+          `Updated! You selected: ${reselectedService} 🚗\n\n` +
+          `Please reply with your Name and 10-digit Phone Number (e.g. Rahul Sharma, 98765 43210):`;
+
+        await sendInstagramReply(senderId, reply);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
+        return;
+      }
+
+      // 2. Parse name and phone number
+      const { name, phone, hasValidPhone } = parseNameAndPhone(text, senderId, session.customer_name);
+
+      // 3. If NO valid 10-digit phone number was provided, do NOT create a lead in CRM
+      if (!hasValidPhone) {
+        if (name && !name.startsWith('Instagram User')) {
+          await setInstagramSession(senderId, {
+            ...session,
+            customer_name: name,
+          });
+        }
+
+        const selectedService = session.selected_service || 'Detailing Service';
+        const displayName = name && !name.startsWith('Instagram User') ? ` ${name}` : '';
+        const promptPhoneMsg =
+          `Thanks${displayName}! 🏎️\n\n` +
+          `To prepare your customized quote for ${selectedService}, please reply with your 10-digit mobile phone number (e.g. 98765 43210):`;
+
+        await sendInstagramReply(senderId, promptPhoneMsg);
+        await logInstagramMessage(senderId, customerName, 'outbound', 'bot', promptPhoneMsg);
+        return;
+      }
+
       const selectedService = session.selected_service || 'Ceramic Coating';
 
-      // Insert Lead into CRM leads table
+      // 4. Insert Lead into CRM leads table ONLY when a real valid phone number is present!
       const { error: insertError } = await supabase.from('leads').insert([
         {
           name,
