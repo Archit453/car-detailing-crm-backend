@@ -706,7 +706,14 @@
 
             <!-- Quick Templates Bar -->
             <div id="instagram-quick-templates" class="hidden px-3.5 py-2 border-t border-zinc-800/80 bg-zinc-900/40 overflow-x-auto whitespace-nowrap space-x-2">
-              <span class="text-[11px] text-zinc-500 font-medium self-center mr-1">Quick replies:</span>
+              <span class="text-[11px] text-zinc-500 font-medium self-center mr-1">Quick Actions:</span>
+              <button id="btn-send-ig-service-buttons" class="text-[11px] px-3 py-1 rounded-full bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-semibold shadow-sm transition active:scale-95 inline-flex items-center space-x-1" title="Send 5 Interactive Service Quick Reply Buttons to Customer">
+                <span>🖲️ Send 5 Service Buttons</span>
+              </button>
+              <button id="btn-send-ig-whatsapp-button" class="text-[11px] px-3 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold shadow-sm transition active:scale-95 inline-flex items-center space-x-1" title="Send Clickable WhatsApp & Website Buttons">
+                <span>💬 Send WhatsApp Link Button</span>
+              </button>
+              <span class="text-zinc-600 self-center">|</span>
               <button class="ig-quick-reply-btn text-[11px] px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition" data-reply="Hi! Thanks for reaching out to Signature Detailing. What car model do you drive?">
                 🚗 Model Inquiry
               </button>
@@ -897,6 +904,27 @@
             <span>Verify Token: <span class="font-mono text-zinc-300">signature_crm_verify_token</span></span>
             <span class="text-emerald-400 font-semibold">HTTP 200 Handshake Ready</span>
           </div>
+        </div>
+
+        <!-- Profile Ice Breakers (Conversation Starter Buttons) -->
+        <div class="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-zinc-400 font-semibold text-xs flex items-center">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1 text-yellow-400"></i>
+              Instagram Profile Ice Breakers (4 Native Buttons)
+            </span>
+            <button id="btn-sync-icebreakers" class="text-[10px] px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-800 hover:bg-pink-900 transition flex items-center space-x-1" title="Sync / Re-apply 4 prompt buttons to @creationindia_ profile">
+              <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>
+              <span>Re-apply to Meta</span>
+            </button>
+          </div>
+          <div id="ig-icebreakers-list" class="grid grid-cols-2 gap-1.5 text-[11px]">
+            <div class="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">🚗 Detailing Packages</div>
+            <div class="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">🛡️ PPF Protection</div>
+            <div class="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">✨ Ceramic Coating</div>
+            <div class="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 font-medium">📍 Location & Visit</div>
+          </div>
+          <p class="text-[10px] text-zinc-500">Configured on @creationindia_. Visible to customers when opening a new chat window on Instagram mobile.</p>
         </div>
 
         <div>

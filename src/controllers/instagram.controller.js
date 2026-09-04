@@ -21,12 +21,28 @@ const SERVICE_MAP = {
 const WELCOME_TEXT =
   `Welcome to Signature Detailing 🚗✨\n\n` +
   `Which service are you interested in?\n\n` +
-  `1. PPF (Paint Protection Film)\n` +
-  `2. Ceramic Coating\n` +
-  `3. Paint Correction\n` +
-  `4. Interior Detailing\n` +
-  `5. Full Detail Package\n\n` +
-  `Please reply with 1, 2, 3, 4, or 5.`;
+  `Tap a button below or reply with 1, 2, 3, 4, or 5:`;
+
+export const SERVICE_QUICK_REPLIES = [
+  { content_type: 'text', title: '1. PPF 🛡️', payload: '1' },
+  { content_type: 'text', title: '2. Ceramic ✨', payload: '2' },
+  { content_type: 'text', title: '3. Correction 🚘', payload: '3' },
+  { content_type: 'text', title: '4. Interior 🧼', payload: '4' },
+  { content_type: 'text', title: '5. Full Detail 🏎️', payload: '5' },
+];
+
+export const WHATSAPP_LINK_BUTTONS = [
+  {
+    type: 'web_url',
+    url: 'https://wa.me/919876543210?text=Hi%20Signature%20Detailing,%20I%20am%20inquiring%20from%20Instagram',
+    title: 'Chat on WhatsApp 💬',
+  },
+  {
+    type: 'postback',
+    title: 'View Services 🚗',
+    payload: 'menu',
+  },
+];
 
 /**
  * Meta Instagram Webhook Verification Handshake (GET /api/webhook/instagram)
@@ -56,8 +72,9 @@ export let latestInstagramWebhookEvent = {
 
 /**
  * Dispatches an outbound message to an Instagram user via Meta Graph API
+ * Supports plain text, Quick Reply buttons, and Button Templates
  */
-export async function sendInstagramOutboundMessage(recipientId, text) {
+export async function sendInstagramOutboundMessage(recipientId, text, options = {}) {
   const token = config.instagram.pageAccessToken;
   if (!token) {
     return { success: false, error: 'No Instagram Access Token configured in environment' };
@@ -79,12 +96,34 @@ export async function sendInstagramOutboundMessage(recipientId, text) {
       : 'https://graph.facebook.com/v21.0/me/messages';
 
     const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
+
+    // Build message payload supporting Quick Replies or Button Template
+    let messageObj = { text };
+
+    if (Array.isArray(options.quick_replies) && options.quick_replies.length > 0) {
+      messageObj = {
+        text,
+        quick_replies: options.quick_replies,
+      };
+    } else if (Array.isArray(options.buttons) && options.buttons.length > 0) {
+      messageObj = {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'button',
+            text: text.slice(0, 640),
+            buttons: options.buttons,
+          },
+        },
+      };
+    }
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: cleanId },
-        message: { text },
+        message: messageObj,
       }),
     });
 
@@ -94,7 +133,7 @@ export async function sendInstagramOutboundMessage(recipientId, text) {
       return { success: false, error: data.error?.message || 'Meta API rejected message', details: data };
     }
 
-    console.log(`[Instagram Outbound Sent] -> User (${cleanId}): ${text.slice(0, 50)}...`);
+    console.log(`[Instagram Outbound Sent] -> User (${cleanId}): ${text.slice(0, 50)}... [Buttons: ${Boolean(options.quick_replies || options.buttons)}]`);
     return { success: true, data };
   } catch (err) {
     console.error('[Instagram API Network Error]', err.message);
@@ -105,8 +144,8 @@ export async function sendInstagramOutboundMessage(recipientId, text) {
 /**
  * Sends a message back to the Instagram user via Meta Graph API (Internal Bot)
  */
-async function sendInstagramReply(recipientId, text) {
-  const result = await sendInstagramOutboundMessage(recipientId, text);
+async function sendInstagramReply(recipientId, text, options = {}) {
+  const result = await sendInstagramOutboundMessage(recipientId, text, options);
   if (!result.success) {
     console.warn(`[Instagram Bot Auto-Reply Warning] Message not sent via Meta: ${result.error}`);
   }
@@ -140,11 +179,19 @@ export const handleInstagramMessage = async (req, res) => {
   console.log('[Instagram Webhook Received]', JSON.stringify(body));
 
   const firstMsg = body.entry?.[0]?.messaging?.[0] || body.entry?.[0]?.changes?.[0]?.value;
+  const rawText =
+    firstMsg?.message?.quick_reply?.payload ||
+    firstMsg?.message?.text ||
+    firstMsg?.postback?.payload ||
+    firstMsg?.postback?.title ||
+    firstMsg?.text ||
+    null;
+
   latestInstagramWebhookEvent = {
     receivedAt: new Date().toISOString(),
     object: body.object,
     senderId: firstMsg?.sender?.id || firstMsg?.from?.id || null,
-    text: firstMsg?.message?.text || firstMsg?.text || null,
+    text: rawText,
     status: 'Webhook event processed',
     count: (latestInstagramWebhookEvent.count || 0) + 1,
     raw: body,
@@ -162,8 +209,19 @@ export const handleInstagramMessage = async (req, res) => {
       // 1. Standard Messenger/Instagram format (entry.messaging)
       if (Array.isArray(entry.messaging)) {
         for (const event of entry.messaging) {
-          if (event.message && !event.message.is_echo && event.sender?.id) {
-            await processIncomingInstagramMessage(event.sender.id, event.message.text || '');
+          const senderId = event.sender?.id;
+          if (!senderId) continue;
+
+          // Inbound direct message (supports Quick Reply button taps)
+          if (event.message && !event.message.is_echo) {
+            const buttonPayload = event.message.quick_reply?.payload;
+            const messageText = buttonPayload || event.message.text || '';
+            await processIncomingInstagramMessage(senderId, messageText);
+          }
+          // Postback event (supports Button Template taps & Ice Breaker clicks)
+          else if (event.postback) {
+            const buttonPayload = event.postback.payload || event.postback.title || '';
+            await processIncomingInstagramMessage(senderId, buttonPayload);
           }
         }
       }
@@ -174,7 +232,11 @@ export const handleInstagramMessage = async (req, res) => {
           if (change.field === 'messages' && change.value) {
             const val = change.value;
             const senderId = val.sender?.id || val.from?.id;
-            const text = val.message?.text || val.text || '';
+            const buttonPayload =
+              val.message?.quick_reply?.payload ||
+              val.postback?.payload ||
+              val.postback?.title;
+            const text = buttonPayload || val.message?.text || val.text || '';
             if (senderId && text) {
               await processIncomingInstagramMessage(senderId, text);
             }
@@ -258,11 +320,24 @@ async function processIncomingInstagramMessage(senderId, text) {
       return;
     }
 
-    // Reset command
+    // Reset command or Menu button click
     if (normalizedText === 'reset' || normalizedText === 'start' || normalizedText === 'menu') {
       await deleteInstagramSession(senderId);
-      await sendInstagramReply(senderId, WELCOME_TEXT);
+      await sendInstagramReply(senderId, WELCOME_TEXT, { quick_replies: SERVICE_QUICK_REPLIES });
       await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
+      return;
+    }
+
+    // Location inquiry (e.g. from Ice Breaker button "📍 Location & Visit")
+    if (normalizedText === 'location' || normalizedText.includes('location') || normalizedText.includes('where')) {
+      const locationText =
+        `📍 Creation Auto Detailing Studio\n\n` +
+        `🏢 Address: Studio 4, Detailing Bay Road, Automobile Hub, India\n` +
+        `⏰ Hours: Mon-Sat 9:30 AM - 8:00 PM\n` +
+        `📞 Phone: +91 98765 43210\n\n` +
+        `Which service can we assist you with today? Tap an option below:`;
+      await sendInstagramReply(senderId, locationText, { quick_replies: SERVICE_QUICK_REPLIES });
+      await logInstagramMessage(senderId, customerName, 'outbound', 'bot', locationText);
       return;
     }
 
@@ -284,12 +359,12 @@ async function processIncomingInstagramMessage(senderId, text) {
         await sendInstagramReply(senderId, reply);
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', reply);
       } else {
-        // Send menu
+        // Send menu with interactive quick reply buttons
         await setInstagramSession(senderId, {
           step: 'awaiting_service',
         });
 
-        await sendInstagramReply(senderId, WELCOME_TEXT);
+        await sendInstagramReply(senderId, WELCOME_TEXT, { quick_replies: SERVICE_QUICK_REPLIES });
         await logInstagramMessage(senderId, customerName, 'outbound', 'bot', WELCOME_TEXT);
       }
       return;

@@ -8,6 +8,8 @@ import {
   sendInstagramOutboundMessage,
   latestInstagramWebhookEvent,
   handleInstagramMessage,
+  SERVICE_QUICK_REPLIES,
+  WHATSAPP_LINK_BUTTONS,
 } from './instagram.controller.js';
 
 const assertConfigured = () => {
@@ -361,7 +363,7 @@ export const getInstagramMessages = asyncHandler(async (req, res) => {
  */
 export const sendInstagramManualMessage = asyncHandler(async (req, res) => {
   assertConfigured();
-  const { senderId, message, customerName } = req.body || {};
+  const { senderId, message, customerName, quick_replies, buttons } = req.body || {};
 
   if (!senderId || typeof senderId !== 'string') {
     throw new ApiError(400, 'Valid Instagram sender ID is required');
@@ -375,8 +377,11 @@ export const sendInstagramManualMessage = asyncHandler(async (req, res) => {
   const phoneKey = `ig_${cleanId}`;
   const trimmedMessage = message.trim();
 
-  // 1. Send via Meta Instagram Graph API
-  const sendResult = await sendInstagramOutboundMessage(cleanId, trimmedMessage);
+  // 1. Send via Meta Instagram Graph API (supports Quick Replies and Button Templates)
+  const sendResult = await sendInstagramOutboundMessage(cleanId, trimmedMessage, {
+    quick_replies,
+    buttons,
+  });
 
   // If Meta API failed, DO NOT pretend success! Throw clear error so UI shows red toast!
   if (!sendResult.success) {
@@ -640,5 +645,93 @@ export const syncInstagramConversations = asyncHandler(async (req, res) => {
   } catch (err) {
     if (err instanceof ApiError) throw err;
     throw new ApiError(500, `Meta sync failed: ${err.message}`, err);
+  }
+});
+
+/**
+ * @desc    Get currently configured Instagram Ice Breaker buttons from Meta
+ * @route   GET /api/inbox/instagram/icebreakers
+ * @access  Protected (Admin)
+ */
+export const getInstagramIceBreakers = asyncHandler(async (req, res) => {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    throw new ApiError(500, 'No Instagram Access Token configured');
+  }
+
+  try {
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? 'https://graph.instagram.com/v21.0/me/messenger_profile'
+      : 'https://graph.facebook.com/v21.0/me/messenger_profile';
+
+    const url = `${baseUrl}?fields=ice_breakers&access_token=${encodeURIComponent(token)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new ApiError(400, data.error?.message || 'Failed to fetch ice breakers from Meta');
+    }
+
+    const iceBreakers = data.data?.[0]?.ice_breakers || [];
+    return successResponse(res, { iceBreakers }, 'Ice breakers retrieved successfully');
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, `Failed to query ice breakers: ${err.message}`, err);
+  }
+});
+
+/**
+ * @desc    Configure or restore Instagram Ice Breaker buttons on Meta profile
+ * @route   POST /api/inbox/instagram/icebreakers
+ * @access  Protected (Admin)
+ */
+export const configureInstagramIceBreakers = asyncHandler(async (req, res) => {
+  const token = config.instagram.pageAccessToken;
+  if (!token) {
+    throw new ApiError(500, 'No Instagram Access Token configured');
+  }
+
+  const customIceBreakers = req.body?.ice_breakers;
+  const defaultIceBreakers = [
+    { question: '🚗 Detailing Packages', payload: 'menu' },
+    { question: '🛡️ PPF Protection', payload: '1' },
+    { question: '✨ Ceramic Coating', payload: '2' },
+    { question: '📍 Location & Visit', payload: 'location' },
+  ];
+
+  const iceBreakers = Array.isArray(customIceBreakers) && customIceBreakers.length > 0
+    ? customIceBreakers
+    : defaultIceBreakers;
+
+  try {
+    const isIGToken = token.startsWith('IGAA') || token.startsWith('IGA');
+    const baseUrl = isIGToken
+      ? 'https://graph.instagram.com/v21.0/me/messenger_profile'
+      : 'https://graph.facebook.com/v21.0/me/messenger_profile';
+
+    const url = `${baseUrl}?access_token=${encodeURIComponent(token)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        platform: 'instagram',
+        ice_breakers: iceBreakers,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new ApiError(400, data.error?.message || 'Failed to update ice breakers on Meta');
+    }
+
+    return successResponse(
+      res,
+      { result: data.result, iceBreakers },
+      'Ice breaker buttons configured on Instagram profile successfully'
+    );
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(500, `Failed to set ice breakers: ${err.message}`, err);
   }
 });

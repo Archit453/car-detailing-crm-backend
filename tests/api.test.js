@@ -426,7 +426,71 @@ async function runTests() {
     assert(igPauseBotRes.status === 200, 'POST /api/inbox/instagram/bot-toggle returns 200 OK');
     assert(igPauseBotJson.data?.botPaused === true, 'Instagram bot confirmed paused');
 
-    // Test 35: POST /api/auth/logout clears session
+    // Test 35: Webhook parses Instagram Quick Reply button tap payload
+    const igQuickReplyWebhookRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_qr_user_99' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                message: {
+                  mid: 'mid_qr_123',
+                  text: '1. PPF 🛡️',
+                  quick_reply: {
+                    payload: '1',
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const igQuickReplyJson = await igQuickReplyWebhookRes.json();
+    assert(igQuickReplyWebhookRes.status === 200, 'POST /api/webhook/instagram with quick_reply returns 200 OK');
+    assert(igQuickReplyJson.status === 'EVENT_RECEIVED', 'Webhook processes quick_reply payload');
+
+    // Test 36: Webhook parses Instagram Postback button tap payload
+    const igPostbackWebhookRes = await fetch(`${baseUrl}/api/webhook/instagram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        object: 'instagram',
+        entry: [
+          {
+            id: '29347217818200339',
+            messaging: [
+              {
+                sender: { id: 'test_pb_user_88' },
+                recipient: { id: '29347217818200339' },
+                timestamp: Date.now(),
+                postback: {
+                  mid: 'mid_pb_456',
+                  title: '📍 Location & Visit',
+                  payload: 'location',
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+    const igPostbackJson = await igPostbackWebhookRes.json();
+    assert(igPostbackWebhookRes.status === 200, 'POST /api/webhook/instagram with postback returns 200 OK');
+    assert(igPostbackJson.status === 'EVENT_RECEIVED', 'Webhook processes postback payload');
+
+    // Test 37: Unauthenticated GET /api/inbox/instagram/icebreakers returns 401
+    const unauthIceBreakersRes = await fetch(`${baseUrl}/api/inbox/instagram/icebreakers`);
+    assert(unauthIceBreakersRes.status === 401, 'Unauthenticated GET /api/inbox/instagram/icebreakers returns 401');
+
+    // Test 38: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

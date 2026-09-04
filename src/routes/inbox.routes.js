@@ -12,6 +12,8 @@ import {
   getInstagramWebhookStatus,
   triggerInstagramTestPing,
   syncInstagramConversations,
+  getInstagramIceBreakers,
+  configureInstagramIceBreakers,
 } from '../controllers/inbox.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -35,6 +37,8 @@ router.post('/instagram/bot-toggle', toggleInstagramBotStatus);
 router.get('/instagram/status', getInstagramWebhookStatus);
 router.post('/instagram/test-ping', triggerInstagramTestPing);
 router.post('/instagram/sync', syncInstagramConversations);
+router.get('/instagram/icebreakers', getInstagramIceBreakers);
+router.post('/instagram/icebreakers', configureInstagramIceBreakers);
 
 export default router;
 
