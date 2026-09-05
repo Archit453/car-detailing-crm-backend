@@ -14,8 +14,9 @@ Welcome to the **Car Detailing CRM & Lead Automation System** developer document
 6. [Meta WhatsApp Cloud API Integration](#6-meta-whatsapp-cloud-api-integration)
 7. [Meta Instagram Direct Message Integration](#7-meta-instagram-direct-message-integration)
 8. [Authentication & Session Security](#8-authentication--session-security)
-9. [Automated Testing Suite (155 Tests)](#9-automated-testing-suite-155-tests)
-10. [Deployment & Production Serverless Pipeline](#10-deployment--production-serverless-pipeline)
+9. [System Settings & Workflow Management (`/adminedit` & `/api/settings`)](#9-system-settings--workflow-management-adminedit--apisettings)
+10. [Automated Testing Suite (163 Tests)](#10-automated-testing-suite-163-tests)
+11. [Deployment & Production Serverless Pipeline](#11-deployment--production-serverless-pipeline)
 
 ---
 
@@ -201,6 +202,17 @@ CREATE TABLE IF NOT EXISTS public.instagram_messages (
     sender VARCHAR(50) NOT NULL CHECK (sender IN ('customer', 'bot', 'agent')),
     message_text TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+#### 5. `public.system_settings`
+Stores dynamic runtime configuration overrides (Meta API tokens, phone IDs, verify tokens, website URLs) modified via the `/adminedit` control panel.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 

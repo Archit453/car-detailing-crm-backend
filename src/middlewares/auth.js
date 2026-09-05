@@ -26,11 +26,14 @@ export const requireAuth = (req, res, next) => {
     }
   }
 
-  // If accessing the dashboard page directly, redirect to login page
+  // If accessing the dashboard or adminedit page directly, redirect to login page
   if (
     req.originalUrl === '/dashboard' ||
     req.originalUrl.startsWith('/dashboard?') ||
-    req.path === '/dashboard'
+    req.path === '/dashboard' ||
+    req.originalUrl === '/adminedit' ||
+    req.originalUrl.startsWith('/adminedit?') ||
+    req.path === '/adminedit'
   ) {
     return res.redirect('/login');
   }

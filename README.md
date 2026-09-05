@@ -25,6 +25,7 @@ A production-ready Express.js REST API backend for a Car Detailing CRM, integrat
 - [Phase 3: Framer Frontend & WhatsApp Lead Automation Integration](#-phase-3-framer-frontend--whatsapp-lead-automation-integration)
 - [Phase 4: Instagram Direct Message Lead Bot Integration](#-phase-4-instagram-direct-message-lead-bot-integration)
 - [🖥️ CRM Frontend Dashboard UI](#️-crm-frontend-dashboard-ui)
+- [⚙️ Settings & Lead Workflow Control Panel (/adminedit)](#️-settings--lead-workflow-control-panel-adminedit)
 - [🔐 Dashboard Authentication & Security](#-dashboard-authentication--security)
 - [⚡ Supabase Database Keep-Alive (Vercel Cron)](#-supabase-database-keep-alive-vercel-cron)
 - [🚀 Git Repository Setup & Push Guide](#-git-repository-setup--push-guide)
@@ -49,9 +50,10 @@ A production-ready Express.js REST API backend for a Car Detailing CRM, integrat
 car-detailing-crm-backend/
 ├── api/
 │   └── index.js                   # Vercel serverless function entrypoint
-├── public/                        # 🖥️ CRM Frontend Dashboard & Login (SPA)
+├── public/                        # 🖥️ CRM Frontend Dashboard & Admin Control Panel
 │   ├── index.html                 # Modern responsive CRM dashboard UI
 │   ├── login.html                 # Automotive-themed admin login UI
+│   ├── adminedit.html             # ⚙️ Workflow diagram, credentials & live Meta API testers
 │   ├── styles.css                 # Dark automotive theme & glassmorphism
 │   └── app.js                     # Client state, filters, Kanban, auth & API sync
 ├── src/
@@ -62,6 +64,7 @@ car-detailing-crm-backend/
 │   │   ├── auth.controller.js     # Admin authentication & 30-day session cookies
 │   │   ├── keepalive.controller.js# Zero-egress Supabase database keepalive ping
 │   │   ├── lead.controller.js     # Leads business logic (CRUD & status updates)
+│   │   ├── settings.controller.js # System settings, Meta credentials & API testers
 │   │   ├── whatsapp.controller.js # Meta WhatsApp Cloud API Bot handler
 │   │   └── instagram.controller.js# Meta Instagram Graph API Bot handler
 │   ├── middlewares/
@@ -74,6 +77,7 @@ car-detailing-crm-backend/
 │   │   ├── auth.routes.js         # /api/auth routes (login, logout, me)
 │   │   ├── keepalive.routes.js    # /api/keepalive routes (Vercel Cron)
 │   │   ├── lead.routes.js         # /api/leads routes (Protected admin CRUD + Public form POST)
+│   │   ├── settings.routes.js     # /api/settings routes (System credentials & testers)
 │   │   ├── whatsapp.routes.js     # /api/webhook/whatsapp routes
 │   │   └── instagram.routes.js    # /api/webhook/instagram routes
 │   ├── validators/
@@ -88,7 +92,7 @@ car-detailing-crm-backend/
 ├── supabase/
 │   └── schema.sql                 # SQL script for tables, indexes, triggers, & RLS
 ├── tests/
-│   └── api.test.js                # Integration & unit test suite (155 tests)
+│   └── api.test.js                # Integration & unit test suite (163 tests)
 ├── .env.example                   # Environment variables example template
 ├── .gitignore                     # Git ignore rules
 ├── package.json                   # Node.js dependencies & scripts
@@ -1125,6 +1129,32 @@ A complete, production-ready dark-mode CRM dashboard is built and served directl
 4. **Manual Lead Entry ("Add Lead" Modal)**: Add walk-in, phone-in, or referral leads with instant validation and database sync.
 5. **Export to CSV**: Download filtered leads into a `.csv` file with a single click.
 6. **Zero Separate Setup**: Embedded directly in the backend repository under `public/`, fully responsive for mobile, tablet, and desktop.
+
+---
+
+## ⚙️ Settings & Lead Workflow Control Panel (/adminedit)
+
+The system includes a dedicated visual settings and workflow configuration panel at `/adminedit`:
+
+👉 **Live URL**: [`https://car-detailing-crm-backend.vercel.app/adminedit`](https://car-detailing-crm-backend.vercel.app/adminedit)  
+👉 **Local URL**: `http://localhost:5000/adminedit`
+
+### Key Features & Capabilities:
+1. **Interactive Workflow Architecture Map**:
+   - Visual step-by-step flowchart mapping lead flow from Framer Website, Meta WhatsApp Cloud API, and Meta Instagram Graph API into Supabase PostgreSQL.
+   - **1-Click Webhook Copy Buttons**:
+     - WhatsApp Webhook Endpoint (`https://car-detailing-crm-backend.vercel.app/api/webhook/whatsapp`)
+     - Instagram Webhook Endpoint (`https://car-detailing-crm-backend.vercel.app/api/webhook/instagram`)
+     - Framer Lead Form Endpoint (`https://car-detailing-crm-backend.vercel.app/api/leads`)
+2. **Meta Developer Account & Integration Credentials Form**:
+   - Easily update **WhatsApp Permanent Access Token**, **Phone Number ID**, **WhatsApp Verify Token**, **Instagram Page Access Token**, **Instagram Verify Token**, **Website URL**, **Business Name**, and **Studio Branding**.
+   - Credential changes take **instant runtime effect** and persist dynamically in the Supabase `public.system_settings` table.
+3. **Live Meta API Diagnostic Testers**:
+   - 🧪 **Test WhatsApp Connection**: Sends a test ping to Meta Cloud API graph endpoint and validates token permissions.
+   - 🧪 **Test Instagram Connection**: Verifies Instagram Page Access Token validity against Meta Graph API.
+   - 🧪 **Simulate Webhook Handshake**: Sends a mock verification query to ensure webhook routing is healthy.
+4. **Session Protection**:
+   - Protected by `requireAuth` middleware. Unauthenticated visits automatically redirect to `/login`.
 
 ---
 
