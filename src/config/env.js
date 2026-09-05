@@ -31,6 +31,7 @@ export const config = {
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'signature_crm_verify_token',
     token: process.env.WHATSAPP_TOKEN || process.env.META_WHATSAPP_TOKEN || '',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    token: process.env.WHATSAPP_TOKEN || process.env.META_WHATSAPP_TOKEN || 'EAAPcKFDfS8sBSe7H52ZBVoeV6lPSmF4tXcYeJbbb7yWQvlmjOmROQrH7IdToVdEhcZA1DZBe7ptAOHzMyj3ocaZC6Mi04nWpOvZB3iBtQOV8r1ZBLsoUojDp0ggxQNcQftFGtwUFEmlzh81hICFAQInK9vNIFsmQtPWQFZA2VBdAMiGnP7SZCCxrcsgKTVN6DZCVmKQZDZD',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '1344182455438369',
   },
   instagram: {
