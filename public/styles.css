@@ -186,3 +186,45 @@ h1, h2, h3, h4, h5, h6, .font-display {
   animation: slide-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* n8n-Style Workflow Canvas & Node Styling */
+.n8n-canvas-bg {
+  background-color: #0b0c10;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.n8n-node-card {
+  background: rgba(18, 20, 29, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.n8n-node-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 14px 40px -6px rgba(0, 0, 0, 0.8), 0 0 25px rgba(56, 189, 248, 0.2);
+}
+
+.n8n-node-active {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3), 0 12px 35px -5px rgba(0, 0, 0, 0.8) !important;
+}
+
+.n8n-port-left, .n8n-port-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #18181b;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  z-index: 20;
+}
+.n8n-port-left { left: -7px; }
+.n8n-port-right { right: -7px; }
+
+
