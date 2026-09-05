@@ -88,7 +88,7 @@ car-detailing-crm-backend/
 ├── supabase/
 │   └── schema.sql                 # SQL script for tables, indexes, triggers, & RLS
 ├── tests/
-│   └── api.test.js                # Integration & unit test suite (40 tests)
+│   └── api.test.js                # Integration & unit test suite (155 tests)
 ├── .env.example                   # Environment variables example template
 ├── .gitignore                     # Git ignore rules
 ├── package.json                   # Node.js dependencies & scripts
@@ -1047,14 +1047,22 @@ CREATE POLICY "Allow public full access to whatsapp_sessions"
        signature_crm_verify_token
        ```
      - Click **Verify and Save**.
-  3. Under **Webhook fields**, click **Manage** and subscribe to **`messages`**.
+  3. Under **Webhook fields**, click **Manage** and subscribe to **`messages`** *(mandatory for incoming customer message webhooks)*.
   4. In **WhatsApp** &rarr; **API Setup**:
-     - Copy your **Phone Number ID** (e.g. `105938491...`).
-     - Copy your **Temporary Access Token** (or generate a permanent System User Token in Business Settings &rarr; System Users &rarr; Generate Token with `whatsapp_business_messaging`).
-  5. Add these two variables in your [Vercel Project Settings > Environment Variables](https://vercel.com/):
+     - Copy your **Phone Number ID** (e.g. `1344182455438369`).
+     - Copy your **Permanent System User Access Token** (generated in Business Settings &rarr; System Users with `whatsapp_business_messaging` and `whatsapp_business_management` permissions).
+  5. Add these environment variables in your [Vercel Project Settings > Environment Variables](https://vercel.com/):
      - `WHATSAPP_TOKEN`: `<Your Meta Access Token>`
-     - `WHATSAPP_PHONE_NUMBER_ID`: `<Your Phone Number ID>`
+     - `WHATSAPP_PHONE_NUMBER_ID`: `1344182455438369`
      - *(Optional)* `WHATSAPP_VERIFY_TOKEN`: `signature_crm_verify_token`
+
+> [!TIP]
+> **Troubleshooting Meta WhatsApp Incoming Webhooks:**
+> - If sending a message from your personal phone number does not trigger a bot reply or show up in the CRM Live Inbox:
+>   1. **Check Webhook Subscription**: Ensure the **`messages`** field is checked under **WhatsApp** &rarr; **Configuration** &rarr; **Webhook fields** in the Meta Developer Portal.
+>   2. **App Mode / Test Numbers**: If your Meta App is in **Development Mode**, Meta only triggers webhooks for phone numbers explicitly added under **WhatsApp** &rarr; **API Setup** &rarr; **To Number** list. Add your personal phone number there or switch the Meta App to **Live Mode**.
+>   3. **Session Reset / Greetings**: You can send `"hi"`, `"hello"`, `"hey"`, `"menu"`, `"services"`, `"start"`, or `"reset"` anytime to reactivate the bot and pull up the interactive packages menu.
+>   4. **Media Attachments**: The bot supports incoming photos, voice notes, documents, stickers, and contact cards, logging them directly into the CRM Live Inbox while acknowledging the customer.
 
 ---
 
