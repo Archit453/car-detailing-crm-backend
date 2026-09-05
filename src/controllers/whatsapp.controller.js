@@ -351,11 +351,8 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     buttonTitle = (req.body.data.interactive_title || req.body.data.button_reply?.title || '').trim();
     profileName = req.body.data.name || req.body.data.sender_name || '';
     phoneNumberId = config.whatsapp.phoneNumberId;
-  } else if (req.body.From && req.body.Body) {
   } else if (req.body.From || req.body.from) {
     // Twilio Webhook Format
-    fromNumber = req.body.From.replace('whatsapp:', '').trim();
-    incomingText = req.body.Body.trim();
     isMeta = false;
     fromNumber = (req.body.From || req.body.from || '').replace('whatsapp:', '').trim();
     incomingText = (req.body.Body || req.body.body || req.body.ButtonPayload || req.body.Payload || '').trim() || 'menu';

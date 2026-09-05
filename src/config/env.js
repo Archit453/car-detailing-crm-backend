@@ -31,6 +31,7 @@ export const config = {
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'signature_crm_verify_token',
     token: process.env.WHATSAPP_TOKEN || process.env.META_WHATSAPP_TOKEN || '',
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '1344182455438369',
   },
   instagram: {
     verifyToken: process.env.INSTAGRAM_VERIFY_TOKEN || 'signature_crm_verify_token',
