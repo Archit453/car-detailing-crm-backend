@@ -43,6 +43,7 @@ export const getSettings = asyncHandler(async (req, res) => {
     businessPhone: dbSettings.businessPhone || config.business.phone,
     businessAddress: dbSettings.businessAddress || config.business.address,
     businessHours: dbSettings.businessHours || config.business.hours,
+    botFlow: dbSettings.botFlow || config.botFlow,
   };
 
   const masked = {
@@ -76,6 +77,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
     businessPhone,
     businessAddress,
     businessHours,
+    botFlow,
   } = req.body;
 
   // Apply updates to in-memory config object
@@ -90,6 +92,12 @@ export const updateSettings = asyncHandler(async (req, res) => {
   if (businessPhone) config.business.phone = businessPhone;
   if (businessAddress) config.business.address = businessAddress;
   if (businessHours) config.business.hours = businessHours;
+  if (botFlow && typeof botFlow === 'object') {
+    config.botFlow = {
+      ...config.botFlow,
+      ...botFlow,
+    };
+  }
 
   // Persist updated settings to Supabase system_settings table if available
   if (isConfigured) {
@@ -108,6 +116,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
           businessPhone: config.business.phone,
           businessAddress: config.business.address,
           businessHours: config.business.hours,
+          botFlow: config.botFlow,
         },
         updated_at: new Date().toISOString(),
       };
@@ -124,6 +133,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
       whatsappPhoneNumberId: config.whatsapp.phoneNumberId,
       websiteUrl: config.business.websiteUrl,
       businessName: config.business.name,
+      botFlow: config.botFlow,
     },
     'System settings updated successfully'
   );

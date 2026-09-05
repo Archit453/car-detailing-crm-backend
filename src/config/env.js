@@ -63,6 +63,22 @@ export const config = {
     sessionSecret: process.env.SESSION_SECRET || 'crm_secret_key_signature_detailing_2026_super_secure',
   },
 
+  // Bot Conversation Flow Customization (Client Editable)
+  botFlow: {
+    welcomeMessage: process.env.BOT_WELCOME_MESSAGE || `Welcome to Signature Detailing 🚗✨\n\nWhich service are you interested in?\n\n1. 🛡️ PPF (Paint Protection Film)\n2. ✨ Ceramic Coating\n3. 🚘 Paint Correction\n4. 🧼 Interior Detailing\n5. 🏎️ Full Detail Package\n\nTap 'View Packages' below or reply with 1, 2, 3, 4, or 5:`,
+    namePrompt: process.env.BOT_NAME_PROMPT || `Great choice! ✨\n\nMay I know your full name so our team can address you properly?`,
+    confirmMessage: process.env.BOT_CONFIRM_MESSAGE || `Thank you, {name}! 🎉\n\nWe have received your request for *{service}*. Our detailing specialist will reach out to you shortly on this number.\n\nExplore our studio transformations & website:\n🌐 {website}`,
+    humanHandoffText: process.env.BOT_HANDOFF_TEXT || `I've alerted our detailing team! An agent will take over this chat shortly to assist you directly. ✨`,
+    triggerKeywords: process.env.BOT_TRIGGER_KEYWORDS || 'hi, hello, menu, services, start, reset',
+    packages: [
+      { id: '1', title: '🛡️ PPF', description: 'Self-healing paint protection film' },
+      { id: '2', title: '✨ Ceramic Coating', description: '9H/10H deep gloss nano armor' },
+      { id: '3', title: '🚘 Paint Correction', description: 'Swirl, haze & scratch removal' },
+      { id: '4', title: '🧼 Interior Detailing', description: 'Deep cabin steam clean & hygiene' },
+      { id: '5', title: '🏎️ Full Detail', description: 'Complete bumper-to-bumper transformation' },
+    ],
+  },
+
   // Vercel Cron Database Keepalive Secret
   cron: {
     secret: process.env.CRON_SECRET || '',

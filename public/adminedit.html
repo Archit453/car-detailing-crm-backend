@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Signature Detailing | Settings & Workflow Manager</title>
+  <title>Signature Detailing | Guided Conversation Builder & Settings</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -32,7 +32,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">Admin Settings & Workflow Control</h1>
-          <p class="text-xs text-zinc-400">Manage Meta API Tokens, Webhooks, Branding & Workflow Setup</p>
+          <p class="text-xs text-zinc-400">Manage Bot Workflows, Meta Tokens, Webhooks & Branding</p>
         </div>
       </div>
 
@@ -63,26 +63,22 @@
       </button>
     </div>
 
-    <!-- 1. n8n-Style Interactive Bot Conversation Workflow Builder -->
+    <!-- 1. Guided Bot Conversation & Message Flow Builder with Real-Time Live Phone Preview -->
     <section class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
         <div class="flex items-center space-x-3">
           <div class="p-2.5 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/20">
-            <i data-lucide="workflow" class="w-5 h-5"></i>
+            <i data-lucide="bot" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-base font-bold text-white tracking-tight">n8n Lead Automation Workflow Engine</h2>
-            <p class="text-xs text-zinc-400">Interactive visual graph node canvas for WhatsApp, Instagram, and Framer website lead pipelines</p>
+            <h2 class="text-base font-bold text-white tracking-tight">Guided Bot Conversation & Message Flow Builder</h2>
+            <p class="text-xs text-zinc-400">Configure welcome greetings, service options, name prompts, confirmation templates & agent handoff text</p>
           </div>
         </div>
         <div class="flex items-center space-x-2">
-          <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20 flex items-center space-x-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>n8n Engine Active</span>
-          </span>
-          <button id="btn-run-workflow" onclick="executeWorkflowTest()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 transition active:scale-95 flex items-center space-x-1.5">
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-            <span>Run Workflow Test</span>
+          <button type="button" onclick="saveBotWorkflow()" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20 transition active:scale-95 flex items-center space-x-1.5">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            <span>Save Bot Workflow</span>
           </button>
         </div>
       </div>
@@ -94,217 +90,406 @@
             <i data-lucide="message-square" class="w-4 h-4 text-emerald-400 shrink-0"></i>
             <span class="text-xs text-zinc-300 font-mono truncate">POST /api/webhook/whatsapp</span>
           </div>
-          <button onclick="copyToClipboard('/api/webhook/whatsapp')" class="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+          <button type="button" onclick="copyToClipboard('/api/webhook/whatsapp')" class="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-semibold transition shrink-0">Copy</button>
         </div>
         <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between">
           <div class="flex items-center space-x-2 truncate">
             <i data-lucide="instagram" class="w-4 h-4 text-pink-400 shrink-0"></i>
             <span class="text-xs text-zinc-300 font-mono truncate">POST /api/webhook/instagram</span>
           </div>
-          <button onclick="copyToClipboard('/api/webhook/instagram')" class="px-2.5 py-1 rounded-md bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+          <button type="button" onclick="copyToClipboard('/api/webhook/instagram')" class="px-2.5 py-1 rounded-md bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 text-[11px] font-semibold transition shrink-0">Copy</button>
         </div>
         <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between">
           <div class="flex items-center space-x-2 truncate">
             <i data-lucide="globe" class="w-4 h-4 text-sky-400 shrink-0"></i>
             <span class="text-xs text-zinc-300 font-mono truncate">POST /api/leads</span>
           </div>
-          <button onclick="copyToClipboard('/api/leads')" class="px-2.5 py-1 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+          <button type="button" onclick="copyToClipboard('/api/leads')" class="px-2.5 py-1 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[11px] font-semibold transition shrink-0">Copy</button>
         </div>
       </div>
 
-      <!-- n8n Canvas Controls Toolbar -->
-      <div class="flex items-center justify-between bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
-        <div class="flex items-center space-x-2">
-          <span class="text-xs font-semibold text-zinc-300 px-2">Visual Workflow Nodes:</span>
-          <button onclick="filterWorkflowNodes('all')" id="n8n-filter-all" class="px-3 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">All Pipeline Nodes</button>
-          <button onclick="filterWorkflowNodes('wa')" id="n8n-filter-wa" class="px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900">WhatsApp Nodes</button>
-          <button onclick="filterWorkflowNodes('ig')" id="n8n-filter-ig" class="px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900">Instagram Nodes</button>
-        </div>
-        <div class="flex items-center space-x-1.5 text-zinc-400">
-          <button onclick="zoomCanvas(0.1)" class="p-1.5 rounded-md hover:bg-zinc-900 hover:text-white" title="Zoom In"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
-          <button onclick="zoomCanvas(-0.1)" class="p-1.5 rounded-md hover:bg-zinc-900 hover:text-white" title="Zoom Out"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
-          <button onclick="resetCanvasZoom()" class="p-1.5 rounded-md hover:bg-zinc-900 hover:text-white" title="Reset Canvas"><i data-lucide="maximize-2" class="w-4 h-4"></i></button>
-        </div>
-      </div>
-
-      <!-- n8n Interactive Grid Canvas Viewport -->
-      <div class="relative w-full h-[560px] rounded-2xl border border-zinc-800/90 n8n-canvas-bg overflow-hidden shadow-inner select-none">
+      <!-- Main Two-Column Layout: Form Cards (Left) + Phone Preview Simulator (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <!-- SVG Connection Wires Overlay -->
-        <svg id="n8n-svg-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible">
-          <!-- Dynamic Bezier wires rendered via JS -->
-        </svg>
+        <!-- Left Column: Form Builder Cards (Step 1 to 5) -->
+        <div class="lg:col-span-7 space-y-6">
 
-        <!-- Canvas Node Viewport Container -->
-        <div id="n8n-viewport" class="relative w-full h-full p-6 transition-transform duration-150 origin-center">
-          
-          <!-- NODE 1: WhatsApp Webhook Trigger -->
-          <div id="node-1" onclick="openNodeInspector('node-1')" class="n8n-node-card absolute top-6 left-6 w-64 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-right" id="port-node-1-out"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
-                  <i data-lucide="zap" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">WA Webhook Trigger</span>
+          <!-- Step 1: Trigger Keywords & Welcome Greeting -->
+          <div class="p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-4 shadow-md">
+            <div class="flex items-center space-x-3 border-b border-zinc-800/80 pb-3">
+              <span class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 text-xs font-bold flex items-center justify-center border border-sky-500/30">1</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Bot Triggers & Welcome Greeting</h3>
+                <p class="text-[11px] text-zinc-400">First message sent when a customer initiates chat</p>
               </div>
-              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Trigger</span>
             </div>
-            <p class="text-[11px] text-zinc-400 mb-3">Listens for customer inbound WhatsApp messages.</p>
-            <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-emerald-300 flex items-center justify-between">
-              <span>Keywords: "Hi", "Menu"</span>
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Trigger Keywords (comma separated)</label>
+              <input type="text" id="input-bot-triggers" oninput="updateLivePhonePreview()" placeholder="hi, hello, menu, services, start, reset" class="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 font-mono transition">
+              <p class="text-[10px] text-zinc-400 mt-1">When customer types any of these, the bot sends the welcome greeting.</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Welcome Message Text</label>
+              <textarea id="input-bot-welcome" rows="5" oninput="updateLivePhonePreview()" class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition leading-relaxed"></textarea>
             </div>
           </div>
 
-          <!-- NODE 2: Interactive List Menu Action -->
-          <div id="node-2" onclick="openNodeInspector('node-2')" class="n8n-node-card absolute top-6 left-[320px] w-72 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-left" id="port-node-2-in"></div>
-            <div class="n8n-port-right" id="port-node-2-out"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center">
-                  <i data-lucide="list" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">Send Package Menu</span>
-              </div>
-              <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[10px] font-bold border border-sky-500/20">Action</span>
-            </div>
-            <p class="text-[11px] text-zinc-400 mb-2">Presents 5 Detailing Packages Interactive List.</p>
-            <div class="p-2.5 rounded-lg bg-[#0b141a] border border-emerald-900/50 text-[10px] text-zinc-300 space-y-1">
-              <div class="font-bold text-emerald-400">1. PPF &bull; 2. Ceramic Coating</div>
-              <div class="text-zinc-400">3. Paint Correction &bull; 4. Detail</div>
-            </div>
-          </div>
-
-          <!-- NODE 3: Customer DB Check Condition -->
-          <div id="node-3" onclick="openNodeInspector('node-3')" class="n8n-node-card absolute top-6 left-[650px] w-64 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-left" id="port-node-3-in"></div>
-            <div class="n8n-port-right" id="port-node-3-out"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
-                  <i data-lucide="git-branch" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">Customer DB Check</span>
-              </div>
-              <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[10px] font-bold border border-indigo-500/20">Branch</span>
-            </div>
-            <p class="text-[11px] text-zinc-400 mb-3">Checks Supabase if phone number exists.</p>
-            <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-indigo-300">
-              Query: SELECT FROM public.leads
-            </div>
-          </div>
-
-          <!-- NODE 4: Capture Customer Name Input -->
-          <div id="node-4" onclick="openNodeInspector('node-4')" class="n8n-node-card absolute top-[280px] left-[320px] w-64 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-left" id="port-node-4-in"></div>
-            <div class="n8n-port-right" id="port-node-4-out"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
-                  <i data-lucide="user-plus" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">Capture Name Prompt</span>
-              </div>
-              <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20">Input</span>
-            </div>
-            <p class="text-[11px] text-zinc-400 mb-3">Prompts new user to type full name.</p>
-            <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-amber-300">
-              State: step = 'awaiting_name'
-            </div>
-          </div>
-
-          <!-- NODE 5: Store Lead in Supabase Database -->
-          <div id="node-5" onclick="openNodeInspector('node-5')" class="n8n-node-card absolute top-[280px] left-[650px] w-64 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-left" id="port-node-5-in"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
-                  <i data-lucide="database" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">Create Lead in CRM</span>
-              </div>
-              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Database</span>
-            </div>
-            <p class="text-[11px] text-zinc-400 mb-3">Inserts new lead into Supabase table.</p>
-            <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-emerald-300">
-              INSERT public.leads (status: 'new')
-            </div>
-          </div>
-
-          <!-- NODE 6: Agent Handoff Coexistence -->
-          <div id="node-6" onclick="openNodeInspector('node-6')" class="n8n-node-card absolute top-[280px] left-6 w-64 p-4 cursor-pointer group z-20">
-            <div class="n8n-port-left" id="port-node-6-in"></div>
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center">
-                  <i data-lucide="headset" class="w-4 h-4"></i>
-                </div>
-                <span class="text-xs font-bold text-white group-hover:text-sky-300">Human Support Transfer</span>
-              </div>
-              <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20">Handoff</span>
-            </div>
-            <p class="text-[11px] text-zinc-400 mb-3">Pauses bot and flags for Live CRM Inbox Agent.</p>
-            <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-rose-300">
-              State: step = 'human_takeover'
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Node Parameter Inspector Side Drawer -->
-        <div id="n8n-node-inspector" class="hidden absolute top-4 right-4 bottom-4 w-80 bg-zinc-950/95 border border-zinc-800 rounded-2xl p-5 shadow-2xl z-30 backdrop-blur-md flex flex-col justify-between space-y-4">
-          <div class="space-y-4 overflow-y-auto pr-1">
-            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div class="flex items-center space-x-2">
-                <div id="insp-icon" class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
-                  <i data-lucide="settings" class="w-4 h-4"></i>
-                </div>
+          <!-- Step 2: Service Package Buttons / Options -->
+          <div class="p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-4 shadow-md">
+            <div class="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <div class="flex items-center space-x-3">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center border border-emerald-500/30">2</span>
                 <div>
-                  <h3 id="insp-title" class="text-xs font-bold text-white">Node Inspector</h3>
-                  <span id="insp-type" class="text-[10px] text-zinc-400 font-mono">Type: Trigger</span>
+                  <h3 class="text-sm font-bold text-white">Service Package Options</h3>
+                  <p class="text-[11px] text-zinc-400">Interactive packages presented to customers</p>
                 </div>
               </div>
-              <button onclick="closeNodeInspector()" class="text-zinc-400 hover:text-white p-1">
-                <i data-lucide="x" class="w-4 h-4"></i>
+              <button type="button" onclick="addPackageItem()" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/20 transition flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Add Item</span>
               </button>
             </div>
 
-            <div class="space-y-3 text-xs">
-              <div>
-                <label class="block text-[11px] font-semibold text-zinc-300 mb-1">Node Description</label>
-                <p id="insp-desc" class="text-zinc-400 text-[11px] leading-relaxed">Configurable node details</p>
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-semibold text-zinc-300 mb-1">Node Execution Parameters (JSON)</label>
-                <textarea id="insp-params" rows="6" class="w-full p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-sky-300 focus:outline-none focus:border-sky-500"></textarea>
-              </div>
-
-              <div id="insp-[node-status-box]" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800/80 text-[11px]">
-                <span class="text-zinc-400 font-medium">Status: </span>
-                <span class="text-emerald-400 font-bold">READY TO EXECUTE</span>
-              </div>
+            <div id="packages-container" class="space-y-3">
+              <!-- Dynamically populated list items -->
             </div>
           </div>
 
-          <div class="pt-3 border-t border-zinc-800 flex items-center space-x-2">
-            <button onclick="testSelectedNode()" class="flex-1 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition flex items-center justify-center space-x-1.5">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-              <span>Test Execute Node</span>
-            </button>
-            <button onclick="closeNodeInspector()" class="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-800">
-              Close
-            </button>
+          <!-- Step 3: Customer Name Prompt -->
+          <div class="p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-4 shadow-md">
+            <div class="flex items-center space-x-3 border-b border-zinc-800/80 pb-3">
+              <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold flex items-center justify-center border border-amber-500/30">3</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Name Capture Prompt</h3>
+                <p class="text-[11px] text-zinc-400">Message asking customer for full name</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Prompt Message</label>
+              <textarea id="input-bot-name-prompt" rows="3" oninput="updateLivePhonePreview()" class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- Step 4: Booking Confirmation Response Template -->
+          <div class="p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-4 shadow-md">
+            <div class="flex items-center space-x-3 border-b border-zinc-800/80 pb-3">
+              <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center border border-indigo-500/30">4</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Confirmation Response Template</h3>
+                <p class="text-[11px] text-zinc-400">Final booking summary sent after capturing name & service</p>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-zinc-300">Template Text</label>
+                <div class="flex items-center space-x-1.5 text-[10px]">
+                  <span class="text-zinc-400">Click to insert:</span>
+                  <button type="button" onclick="insertPlaceholder('{name}')" class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 font-mono">{name}</button>
+                  <button type="button" onclick="insertPlaceholder('{service}')" class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 font-mono">{service}</button>
+                  <button type="button" onclick="insertPlaceholder('{website}')" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20 font-mono">{website}</button>
+                </div>
+              </div>
+              <textarea id="input-bot-confirm" rows="4" oninput="updateLivePhonePreview()" class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- Step 5: Human Agent Takeover -->
+          <div class="p-5 rounded-2xl bg-zinc-950/90 border border-zinc-800 space-y-4 shadow-md">
+            <div class="flex items-center space-x-3 border-b border-zinc-800/80 pb-3">
+              <span class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 text-xs font-bold flex items-center justify-center border border-rose-500/30">5</span>
+              <div>
+                <h3 class="text-sm font-bold text-white">Human Support & Agent Takeover</h3>
+                <p class="text-[11px] text-zinc-400">Response when user asks to talk to a human agent</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Agent Handoff Text</label>
+              <textarea id="input-bot-handoff" rows="3" oninput="updateLivePhonePreview()" class="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition leading-relaxed"></textarea>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Real-Time Live Phone Preview Simulator -->
+        <div class="lg:col-span-5">
+          <div class="sticky top-20 bg-zinc-950 border border-zinc-800 rounded-3xl p-4 shadow-2xl space-y-4">
+            
+            <!-- Phone Header -->
+            <div class="flex items-center justify-between px-3 py-2 bg-zinc-900 rounded-2xl border border-zinc-800">
+              <div class="flex items-center space-x-3">
+                <div class="relative">
+                  <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xs shadow-md">
+                    🚗
+                  </div>
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-zinc-900 rounded-full"></span>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-white">Signature Detailing Bot</h4>
+                  <p class="text-[10px] text-emerald-400 font-medium">WhatsApp / Instagram Live Preview</p>
+                </div>
+              </div>
+              <button type="button" onclick="resetPhoneSimulation()" class="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition" title="Reset Simulator">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Simulated Phone Chat Screen Viewport -->
+            <div id="sim-viewport" class="h-[520px] bg-[#0b141a] rounded-2xl p-4 overflow-y-auto space-y-3 font-sans text-xs shadow-inner scrollbar-thin scrollbar-thumb-zinc-800">
+              
+              <!-- 1. Bot Welcome Greeting Bubble -->
+              <div class="flex flex-col items-start space-y-2 max-w-[90%]">
+                <div class="p-3 rounded-2xl bg-[#202c33] text-zinc-100 text-[11px] leading-relaxed shadow rounded-tl-none whitespace-pre-wrap" id="sim-bubble-welcome">
+                  <!-- Dynamic text -->
+                </div>
+                
+                <!-- Interactive Service Buttons Preview -->
+                <div id="sim-bubble-buttons" class="flex flex-wrap gap-1.5 pt-1 w-full">
+                  <!-- Dynamic buttons -->
+                </div>
+              </div>
+
+              <!-- 2. Simulated Customer Selection -->
+              <div class="flex justify-end">
+                <div class="p-3 rounded-2xl bg-[#005c4b] text-white text-[11px] shadow rounded-tr-none" id="sim-bubble-customer-service">
+                  🛡️ PPF (Paint Protection Film)
+                </div>
+              </div>
+
+              <!-- 3. Bot Name Prompt Bubble -->
+              <div class="flex justify-start max-w-[90%]">
+                <div class="p-3 rounded-2xl bg-[#202c33] text-zinc-100 text-[11px] leading-relaxed shadow rounded-tl-none whitespace-pre-wrap" id="sim-bubble-name-prompt">
+                  <!-- Dynamic text -->
+                </div>
+              </div>
+
+              <!-- 4. Simulated Customer Name Reply -->
+              <div class="flex justify-end">
+                <div class="p-3 rounded-2xl bg-[#005c4b] text-white text-[11px] shadow rounded-tr-none" id="sim-bubble-customer-name">
+                  Rahul Sharma
+                </div>
+              </div>
+
+              <!-- 5. Bot Confirmation Bubble -->
+              <div class="flex justify-start max-w-[90%]">
+                <div class="p-3 rounded-2xl bg-[#202c33] text-zinc-100 text-[11px] leading-relaxed shadow rounded-tl-none whitespace-pre-wrap" id="sim-bubble-confirm">
+                  <!-- Dynamic text -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Interactive Chat Tester Input bar -->
+            <div class="p-2 bg-zinc-900 rounded-2xl border border-zinc-800 flex items-center space-x-2">
+              <input type="text" id="sim-input" placeholder="Type message to test (e.g. hi, 1, Rahul)..." onkeydown="if(event.key==='Enter') runSimulatedMessage()" class="flex-1 px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-sky-500">
+              <button type="button" onclick="runSimulatedMessage()" class="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition active:scale-95">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </div>
+
           </div>
         </div>
 
       </div>
-
     </section>
 
-    </section>
+    <!-- Expandable n8n Visual Workflow Engine & Graph Canvas (Advanced Developer View) -->
+    <details class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm group">
+      <summary class="cursor-pointer flex items-center justify-between text-base font-bold text-white tracking-tight list-none">
+        <div class="flex items-center space-x-3">
+          <div class="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <i data-lucide="git-merge" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-base font-bold text-white">n8n Engine Graph Canvas (Developer Visualizer)</span>
+            <p class="text-xs text-zinc-400 font-normal">Click to expand visual graph node canvas for WhatsApp, Instagram & Framer webhook routing</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 text-zinc-400 group-open:rotate-180 transition-transform">
+          <i data-lucide="chevron-down" class="w-5 h-5"></i>
+        </div>
+      </summary>
+
+      <div class="pt-6 space-y-6">
+        <!-- n8n Canvas Controls Toolbar -->
+        <div class="flex items-center justify-between bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold text-zinc-300 px-2">Visual Workflow Nodes:</span>
+            <button type="button" onclick="filterWorkflowNodes('all')" id="n8n-filter-all" class="px-3 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">All Nodes</button>
+            <button type="button" onclick="filterWorkflowNodes('wa')" id="n8n-filter-wa" class="px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900">WhatsApp Nodes</button>
+            <button type="button" onclick="filterWorkflowNodes('ig')" id="n8n-filter-ig" class="px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900">Instagram Nodes</button>
+          </div>
+          <button type="button" id="btn-run-workflow" onclick="executeWorkflowTest()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/20 transition active:scale-95 flex items-center space-x-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            <span>Run Workflow Test</span>
+          </button>
+        </div>
+
+        <!-- n8n Interactive Grid Canvas Viewport -->
+        <div class="relative w-full h-[500px] rounded-2xl border border-zinc-800/90 n8n-canvas-bg overflow-hidden shadow-inner select-none">
+          <svg id="n8n-svg-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-visible"></svg>
+          <div id="n8n-viewport" class="relative w-full h-full p-6 transition-transform duration-150 origin-center">
+            <!-- Node 1 -->
+            <div id="node-1" onclick="openNodeInspector('node-1')" class="n8n-node-card absolute top-6 left-6 w-64 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-right" id="port-node-1-out"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">WA Webhook Trigger</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Trigger</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-3">Listens for customer inbound WhatsApp messages.</p>
+              <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-emerald-300 flex items-center justify-between">
+                <span>Keywords: "Hi", "Menu"</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+              </div>
+            </div>
+
+            <!-- Node 2 -->
+            <div id="node-2" onclick="openNodeInspector('node-2')" class="n8n-node-card absolute top-6 left-[320px] w-72 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-left" id="port-node-2-in"></div>
+              <div class="n8n-port-right" id="port-node-2-out"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">Send Package Menu</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[10px] font-bold border border-sky-500/20">Action</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-2">Presents 5 Detailing Packages Interactive List.</p>
+              <div class="p-2.5 rounded-lg bg-[#0b141a] border border-emerald-900/50 text-[10px] text-zinc-300 space-y-1">
+                <div class="font-bold text-emerald-400">1. PPF &bull; 2. Ceramic Coating</div>
+                <div class="text-zinc-400">3. Paint Correction &bull; 4. Detail</div>
+              </div>
+            </div>
+
+            <!-- Node 3 -->
+            <div id="node-3" onclick="openNodeInspector('node-3')" class="n8n-node-card absolute top-6 left-[650px] w-64 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-left" id="port-node-3-in"></div>
+              <div class="n8n-port-right" id="port-node-3-out"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
+                    <i data-lucide="git-branch" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">Customer DB Check</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[10px] font-bold border border-indigo-500/20">Branch</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-3">Checks Supabase if phone number exists.</p>
+              <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-indigo-300">
+                Query: SELECT FROM public.leads
+              </div>
+            </div>
+
+            <!-- Node 4 -->
+            <div id="node-4" onclick="openNodeInspector('node-4')" class="n8n-node-card absolute top-[260px] left-[320px] w-64 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-left" id="port-node-4-in"></div>
+              <div class="n8n-port-right" id="port-node-4-out"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">Capture Name Prompt</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20">Input</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-3">Prompts new user to type full name.</p>
+              <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-amber-300">
+                State: step = 'awaiting_name'
+              </div>
+            </div>
+
+            <!-- Node 5 -->
+            <div id="node-5" onclick="openNodeInspector('node-5')" class="n8n-node-card absolute top-[260px] left-[650px] w-64 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-left" id="port-node-5-in"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">Create Lead in CRM</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">Database</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-3">Inserts lead record into Supabase table.</p>
+              <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-emerald-300">
+                INSERT public.leads (status: 'new')
+              </div>
+            </div>
+
+            <!-- Node 6 -->
+            <div id="node-6" onclick="openNodeInspector('node-6')" class="n8n-node-card absolute top-[260px] left-6 w-64 p-4 cursor-pointer group z-20">
+              <div class="n8n-port-left" id="port-node-6-in"></div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center">
+                    <i data-lucide="headset" class="w-4 h-4"></i>
+                  </div>
+                  <span class="text-xs font-bold text-white group-hover:text-sky-300">Human Support Transfer</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20">Handoff</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mb-3">Pauses bot and flags for Live CRM Inbox Agent.</p>
+              <div class="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-rose-300">
+                State: step = 'human_takeover'
+              </div>
+            </div>
+          </div>
+
+          <!-- Inspector Side Drawer -->
+          <div id="n8n-node-inspector" class="hidden absolute top-4 right-4 bottom-4 w-80 bg-zinc-950/95 border border-zinc-800 rounded-2xl p-5 shadow-2xl z-30 backdrop-blur-md flex flex-col justify-between space-y-4">
+            <div class="space-y-4 overflow-y-auto pr-1">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div class="flex items-center space-x-2">
+                  <div id="insp-icon" class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <h3 id="insp-title" class="text-xs font-bold text-white">Node Inspector</h3>
+                    <span id="insp-type" class="text-[10px] text-zinc-400 font-mono">Type: Trigger</span>
+                  </div>
+                </div>
+                <button type="button" onclick="closeNodeInspector()" class="text-zinc-400 hover:text-white p-1">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div>
+                  <label class="block text-[11px] font-semibold text-zinc-300 mb-1">Node Description</label>
+                  <p id="insp-desc" class="text-zinc-400 text-[11px] leading-relaxed">Configurable node details</p>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-zinc-300 mb-1">Node Execution Parameters (JSON)</label>
+                  <textarea id="insp-params" rows="6" class="w-full p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-sky-300 focus:outline-none focus:border-sky-500"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-zinc-800 flex items-center space-x-2">
+              <button type="button" onclick="testSelectedNode()" class="flex-1 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition flex items-center justify-center space-x-1.5">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                <span>Test Node</span>
+              </button>
+              <button type="button" onclick="closeNodeInspector()" class="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-800">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <!-- 2. Integration Credentials & Configuration Panel -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -492,84 +677,183 @@
   </main>
 
   <script>
+    // State management for Packages list
+    let botPackages = [
+      { id: '1', title: '🛡️ PPF', description: 'Self-healing paint protection film' },
+      { id: '2', title: '✨ Ceramic Coating', description: '9H/10H deep gloss nano armor' },
+      { id: '3', title: '🚘 Paint Correction', description: 'Swirl, haze & scratch removal' },
+      { id: '4', title: '🧼 Interior Detailing', description: 'Deep cabin steam clean & hygiene' },
+      { id: '5', title: '🏎️ Full Detail', description: 'Complete bumper-to-bumper transformation' },
+    ];
+
     // Node definitions store for n8n Inspector
     const n8nNodeStore = {
-      'node-1': {
-        title: 'WA Webhook Trigger',
-        type: 'Webhook Trigger',
-        desc: 'Listens for customer inbound WhatsApp messages via Meta Cloud API webhook.',
-        params: JSON.stringify({
-          endpoint: '/api/webhook/whatsapp',
-          acceptedKeywords: ['Hi', 'Hello', 'Menu', 'Services', 'Reset'],
-          verifyToken: 'signature_crm_verify_token'
-        }, null, 2)
-      },
-      'node-2': {
-        title: 'Send Package Menu',
-        type: 'Meta List Template',
-        desc: 'Sends an interactive Meta list menu containing 5 detailing packages.',
-        params: JSON.stringify({
-          templateType: 'interactive_list',
-          header: 'Signature Detailing 🏎️✨',
-          buttonText: 'View Packages 🏎️',
-          packages: [
-            '🛡️ PPF (Paint Protection Film)',
-            '✨ Ceramic Coating',
-            '🚘 Paint Correction',
-            '🧼 Interior Detailing',
-            '🏎️ Full Detail Package'
-          ]
-        }, null, 2)
-      },
-      'node-3': {
-        title: 'Customer DB Check',
-        type: 'Condition Branch',
-        desc: 'Queries Supabase database to check if customer phone number exists in public.leads.',
-        params: JSON.stringify({
-          queryTable: 'public.leads',
-          matchColumn: 'phone',
-          branches: {
-            isNew: 'node-4',
-            isReturning: 'node-2'
-          }
-        }, null, 2)
-      },
-      'node-4': {
-        title: 'Capture Name Prompt',
-        type: 'Conversational Input',
-        desc: 'Prompts new customer to enter full name to complete slot booking.',
-        params: JSON.stringify({
-          promptText: 'Awesome choice! Please type your full name so our master detailer can confirm your slot.',
-          sessionState: 'awaiting_name'
-        }, null, 2)
-      },
-      'node-5': {
-        title: 'Create Lead in CRM',
-        type: 'Database Action',
-        desc: 'Inserts lead record into Supabase public.leads table.',
-        params: JSON.stringify({
-          targetTable: 'public.leads',
-          defaultStatus: 'new',
-          defaultSource: 'whatsapp',
-          syncTarget: 'CRM Kanban Board'
-        }, null, 2)
-      },
-      'node-6': {
-        title: 'Human Support Transfer',
-        type: 'Agent Coexistence Handoff',
-        desc: 'Pauses bot auto-reply and flags conversation for human agent in CRM Live Inbox.',
-        params: JSON.stringify({
-          sessionState: 'human_takeover',
-          botActive: false,
-          coexistenceMode: 'Meta WA Mobile App & CRM Live Inbox'
-        }, null, 2)
-      }
+      'node-1': { title: 'WA Webhook Trigger', type: 'Webhook Trigger', desc: 'Listens for customer inbound WhatsApp messages.', params: '{\n  "endpoint": "/api/webhook/whatsapp"\n}' },
+      'node-2': { title: 'Send Package Menu', type: 'Meta List Template', desc: 'Sends an interactive Meta list menu containing detailing packages.', params: '{\n  "templateType": "interactive_list"\n}' },
+      'node-3': { title: 'Customer DB Check', type: 'Condition Branch', desc: 'Queries Supabase database to check if customer exists.', params: '{\n  "queryTable": "public.leads"\n}' },
+      'node-4': { title: 'Capture Name Prompt', type: 'Conversational Input', desc: 'Prompts new customer to enter full name.', params: '{\n  "sessionState": "awaiting_name"\n}' },
+      'node-5': { title: 'Create Lead in CRM', type: 'Database Action', desc: 'Inserts lead record into Supabase public.leads table.', params: '{\n  "targetTable": "public.leads"\n}' },
+      'node-6': { title: 'Human Support Transfer', type: 'Agent Coexistence Handoff', desc: 'Pauses bot auto-reply and flags for human agent.', params: '{\n  "sessionState": "human_takeover"\n}' }
     };
 
     let selectedNodeId = null;
-    let canvasZoom = 1.0;
 
-    // Render Curved Bezier Connection Wires on SVG Canvas
+    // Render Package Items in UI
+    function renderPackageItemsUI() {
+      const container = document.getElementById('packages-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      botPackages.forEach((pkg, index) => {
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-3';
+        item.innerHTML = `
+          <span class="w-6 h-6 rounded-md bg-zinc-800 text-zinc-300 text-xs font-bold flex items-center justify-center shrink-0">${index + 1}</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+            <input type="text" value="${escapeHtml(pkg.title)}" oninput="updatePackageItem(${index}, 'title', this.value)" placeholder="Title (e.g. 🛡️ PPF)" class="px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-sky-500">
+            <input type="text" value="${escapeHtml(pkg.description)}" oninput="updatePackageItem(${index}, 'description', this.value)" placeholder="Description" class="px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-400 focus:outline-none focus:border-sky-500">
+          </div>
+          <button type="button" onclick="removePackageItem(${index})" class="p-1.5 text-zinc-400 hover:text-red-400 transition shrink-0" title="Remove Item">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+      updateLivePhonePreview();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/"/g, '&quot;');
+    }
+
+    function addPackageItem() {
+      const newId = String(botPackages.length + 1);
+      botPackages.push({ id: newId, title: `✨ New Package ${newId}`, description: 'Premium detailing service' });
+      renderPackageItemsUI();
+    }
+
+    function removePackageItem(index) {
+      if (botPackages.length <= 1) {
+        showToast('At least one package item is required', 'error');
+        return;
+      }
+      botPackages.splice(index, 1);
+      renderPackageItemsUI();
+    }
+
+    function updatePackageItem(index, field, value) {
+      if (botPackages[index]) {
+        botPackages[index][field] = value;
+        updateLivePhonePreview();
+      }
+    }
+
+    function insertPlaceholder(tag) {
+      const textarea = document.getElementById('input-bot-confirm');
+      if (!textarea) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      textarea.value = text.substring(0, start) + tag + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+      updateLivePhonePreview();
+    }
+
+    // Update Real-Time Live Phone Preview Simulator
+    function updateLivePhonePreview() {
+      const welcome = document.getElementById('input-bot-welcome')?.value || 'Welcome to Signature Detailing 🚗✨\nWhich service are you interested in?';
+      const namePrompt = document.getElementById('input-bot-name-prompt')?.value || 'Great choice! May I know your full name so our team can address you properly?';
+      const confirmTpl = document.getElementById('input-bot-confirm')?.value || 'Thank you, {name}! We have received your request for {service}.';
+      const websiteUrl = document.getElementById('input-website-url')?.value || 'https://weekly-steps-579379.framer.app/';
+
+      // 1. Welcome Bubble
+      const simWelcome = document.getElementById('sim-bubble-welcome');
+      if (simWelcome) simWelcome.innerText = welcome;
+
+      // 2. Buttons Bubble
+      const simButtons = document.getElementById('sim-bubble-buttons');
+      if (simButtons) {
+        simButtons.innerHTML = '';
+        botPackages.forEach(pkg => {
+          const btn = document.createElement('div');
+          btn.className = 'px-3 py-1.5 rounded-xl bg-[#1f2c34] border border-[#2a3942] text-sky-400 font-semibold text-[11px] hover:bg-[#2a3942] cursor-pointer transition flex items-center justify-between gap-2 shadow-sm';
+          btn.innerText = pkg.title || 'Package';
+          simButtons.appendChild(btn);
+        });
+      }
+
+      // 3. Name Prompt Bubble
+      const simNamePrompt = document.getElementById('sim-bubble-name-prompt');
+      if (simNamePrompt) simNamePrompt.innerText = namePrompt;
+
+      // 4. Confirmation Bubble
+      const simConfirm = document.getElementById('sim-bubble-confirm');
+      if (simConfirm) {
+        const sampleService = botPackages[0]?.title || 'PPF';
+        const formatted = confirmTpl
+          .replace(/\{name\}/g, 'Rahul Sharma')
+          .replace(/\{service\}/g, sampleService)
+          .replace(/\{website\}/g, websiteUrl);
+        simConfirm.innerText = formatted;
+      }
+    }
+
+    function resetPhoneSimulation() {
+      showToast('Resetting live phone preview simulator...', 'success');
+      updateLivePhonePreview();
+    }
+
+    function runSimulatedMessage() {
+      const input = document.getElementById('sim-input');
+      const val = input ? input.value.trim() : '';
+      if (!val) return;
+
+      const viewport = document.getElementById('sim-viewport');
+      if (viewport) {
+        const userBubble = document.createElement('div');
+        userBubble.className = 'flex justify-end';
+        userBubble.innerHTML = `<div class="p-3 rounded-2xl bg-[#005c4b] text-white text-[11px] shadow rounded-tr-none">${val}</div>`;
+        viewport.appendChild(userBubble);
+        viewport.scrollTop = viewport.scrollHeight;
+      }
+      input.value = '';
+      showToast(`Simulated message: "${val}"`, 'success');
+    }
+
+    // Save Bot Workflow (POST /api/settings)
+    async function saveBotWorkflow() {
+      const payload = {
+        botFlow: {
+          triggerKeywords: document.getElementById('input-bot-triggers').value,
+          welcomeMessage: document.getElementById('input-bot-welcome').value,
+          namePrompt: document.getElementById('input-bot-name-prompt').value,
+          confirmMessage: document.getElementById('input-bot-confirm').value,
+          humanHandoffText: document.getElementById('input-bot-handoff').value,
+          packages: botPackages,
+        }
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('⚡ Bot Conversation Workflow saved and active across backend!', 'success');
+        } else {
+          showToast(json.error?.message || 'Failed to save bot workflow', 'error');
+        }
+      } catch (err) {
+        showToast('Network error saving bot workflow', 'error');
+      }
+    }
+
+    // Render Canvas Wires
     function renderCanvasWires() {
       const svg = document.getElementById('n8n-svg-canvas');
       if (!svg) return;
@@ -613,14 +897,12 @@
       });
     }
 
-    // Open Node Parameter Inspector
     function openNodeInspector(nodeId) {
       selectedNodeId = nodeId;
       const drawer = document.getElementById('n8n-node-inspector');
       const data = n8nNodeStore[nodeId];
       if (!drawer || !data) return;
 
-      // Highlight selected node card
       document.querySelectorAll('.n8n-node-card').forEach(card => card.classList.remove('n8n-node-active'));
       const activeCard = document.getElementById(nodeId);
       if (activeCard) activeCard.classList.add('n8n-node-active');
@@ -633,7 +915,6 @@
       drawer.classList.remove('hidden');
     }
 
-    // Close Node Inspector
     function closeNodeInspector() {
       const drawer = document.getElementById('n8n-node-inspector');
       if (drawer) drawer.classList.add('hidden');
@@ -641,7 +922,6 @@
       selectedNodeId = null;
     }
 
-    // Test execute selected node
     function testSelectedNode() {
       if (!selectedNodeId) return;
       showToast(`Executing diagnostic test for node [${n8nNodeStore[selectedNodeId]?.title}]...`, 'success');
@@ -650,7 +930,6 @@
       }, 1000);
     }
 
-    // Test full workflow run
     function executeWorkflowTest() {
       showToast('⚡ Running n8n Lead Automation Workflow Simulation...', 'success');
       let step = 1;
@@ -668,35 +947,10 @@
       }, 600);
     }
 
-    // Zoom & pan controls
-    function zoomCanvas(delta) {
-      canvasZoom = Math.max(0.7, Math.min(1.4, canvasZoom + delta));
-      const viewport = document.getElementById('n8n-viewport');
-      if (viewport) viewport.style.transform = `scale(${canvasZoom})`;
-      setTimeout(renderCanvasWires, 160);
-    }
-
-    function resetCanvasZoom() {
-      canvasZoom = 1.0;
-      const viewport = document.getElementById('n8n-viewport');
-      if (viewport) viewport.style.transform = 'scale(1)';
-      setTimeout(renderCanvasWires, 160);
-    }
-
-    // Filter workflow nodes
     function filterWorkflowNodes(filter) {
-      const btnAll = document.getElementById('n8n-filter-all');
-      const btnWa = document.getElementById('n8n-filter-wa');
-      const btnIg = document.getElementById('n8n-filter-ig');
-
-      btnAll.className = filter === 'all' ? 'px-3 py-1 rounded-lg text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40' : 'px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900';
-      btnWa.className = filter === 'wa' ? 'px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900';
-      btnIg.className = filter === 'ig' ? 'px-3 py-1 rounded-lg text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/40' : 'px-3 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900';
-
       showToast(`Showing ${filter.toUpperCase()} workflow pipeline nodes`, 'success');
     }
 
-    // Eye button token visibility toggle
     function toggleTokenVisibility(inputId, eyeId) {
       const input = document.getElementById(inputId);
       const eyeIcon = document.getElementById(eyeId);
@@ -708,38 +962,16 @@
       lucide.createIcons();
     }
 
-    // Switch between WhatsApp & Instagram Bot Workflow tabs
-    function switchWorkflowTab(tab) {
-      const waTree = document.getElementById('workflow-wa');
-      const igTree = document.getElementById('workflow-ig');
-      const btnWa = document.getElementById('tab-btn-wa');
-      const btnIg = document.getElementById('tab-btn-ig');
-
-      if (tab === 'wa') {
-        if (waTree) waTree.classList.remove('hidden');
-        if (igTree) igTree.classList.add('hidden');
-        if (btnWa) btnWa.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-        if (btnIg) btnIg.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800';
-      } else {
-        if (waTree) waTree.classList.add('hidden');
-        if (igTree) igTree.classList.remove('hidden');
-        if (btnWa) btnWa.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800';
-        if (btnIg) btnIg.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-pink-500/20 text-pink-300 border border-pink-500/40';
-      }
-      lucide.createIcons();
-    }
-
-    // Copy helper
     function copyToClipboard(path) {
       const fullUrl = window.location.origin + path;
       navigator.clipboard.writeText(fullUrl);
       showToast('Copied endpoint URL to clipboard: ' + fullUrl, 'success');
     }
 
-    // Show toast banner
     function showToast(msg, type = 'success') {
       const banner = document.getElementById('toast-banner');
       const text = document.getElementById('toast-message');
+      if (!banner || !text) return;
       text.innerText = msg;
 
       banner.className = `p-4 rounded-xl border text-sm font-medium transition-all duration-300 flex items-center justify-between ${
@@ -769,13 +1001,25 @@
           document.getElementById('input-biz-name').value = d.businessName || '';
           document.getElementById('input-biz-phone').value = d.businessPhone || '';
           document.getElementById('input-biz-address').value = d.businessAddress || '';
+
+          if (d.botFlow) {
+            document.getElementById('input-bot-triggers').value = d.botFlow.triggerKeywords || 'hi, hello, menu, services, start, reset';
+            document.getElementById('input-bot-welcome').value = d.botFlow.welcomeMessage || '';
+            document.getElementById('input-bot-name-prompt').value = d.botFlow.namePrompt || '';
+            document.getElementById('input-bot-confirm').value = d.botFlow.confirmMessage || '';
+            document.getElementById('input-bot-handoff').value = d.botFlow.humanHandoffText || '';
+            if (Array.isArray(d.botFlow.packages) && d.botFlow.packages.length > 0) {
+              botPackages = d.botFlow.packages;
+            }
+          }
+          renderPackageItemsUI();
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
       }
     }
 
-    // Form submission handler
+    // Form submission handler for integration credentials
     document.getElementById('form-settings').addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
@@ -788,6 +1032,14 @@
         businessName: document.getElementById('input-biz-name').value,
         businessPhone: document.getElementById('input-biz-phone').value,
         businessAddress: document.getElementById('input-biz-address').value,
+        botFlow: {
+          triggerKeywords: document.getElementById('input-bot-triggers').value,
+          welcomeMessage: document.getElementById('input-bot-welcome').value,
+          namePrompt: document.getElementById('input-bot-name-prompt').value,
+          confirmMessage: document.getElementById('input-bot-confirm').value,
+          humanHandoffText: document.getElementById('input-bot-handoff').value,
+          packages: botPackages,
+        }
       };
 
       try {
@@ -808,12 +1060,11 @@
       }
     });
 
-    // Test WhatsApp Connection
+    // Diagnostic Testers
     document.getElementById('btn-test-wa').addEventListener('click', async () => {
       const box = document.getElementById('res-test-wa');
       box.classList.remove('hidden');
       box.innerText = 'Testing Meta WhatsApp API connection...';
-
       try {
         const res = await fetch('/api/settings/test-whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
         const json = await res.json();
@@ -823,12 +1074,10 @@
       }
     });
 
-    // Test Instagram Connection
     document.getElementById('btn-test-ig').addEventListener('click', async () => {
       const box = document.getElementById('res-test-ig');
       box.classList.remove('hidden');
       box.innerText = 'Testing Meta Instagram API connection...';
-
       try {
         const res = await fetch('/api/settings/test-instagram', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
         const json = await res.json();
@@ -838,12 +1087,10 @@
       }
     });
 
-    // Test Webhook Ping
     document.getElementById('btn-test-ping').addEventListener('click', async () => {
       const box = document.getElementById('res-test-ping');
       box.classList.remove('hidden');
       box.innerText = 'Executing Webhook simulation ping...';
-
       try {
         const res = await fetch('/api/settings/test-webhook-ping', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
         const json = await res.json();
@@ -853,13 +1100,11 @@
       }
     });
 
-    // Logout
     document.getElementById('btn-logout').addEventListener('click', async () => {
       await fetch('/api/auth/logout', { method: 'POST' });
       window.location.href = '/login';
     });
 
-    // Initialize lucide icons, settings, and n8n wires
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       loadSettings();

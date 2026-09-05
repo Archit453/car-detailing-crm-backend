@@ -116,6 +116,10 @@ Which service are you interested in?
 
 Tap 'View Packages' below or reply with 1, 2, 3, 4, or 5:`;
 
+export function getWelcomeMessage() {
+  return config.botFlow?.welcomeMessage || WELCOME_MESSAGE;
+}
+
 /**
  * Sends outbound WhatsApp message via Meta Cloud API
  * Supports plain text, interactive buttons (max 3, <=20 chars), and interactive list messages
@@ -468,7 +472,7 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
         updated_at: new Date().toISOString(),
       });
 
-    const handoffText = "I've alerted our detailing team! An agent will take over this chat shortly to assist you directly. ✨";
+    const handoffText = config.botFlow?.humanHandoffText || "I've alerted our detailing team! An agent will take over this chat shortly to assist you directly. ✨";
     await logWhatsAppMessage(cleanPhone, profileName || session?.customer_name || 'WhatsApp Customer', 'outbound', 'bot', handoffText);
 
     if (isMeta) {
@@ -479,19 +483,12 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
   }
 
   // Reset / Start / Greetings / Menu command
-  const isGreetingOrReset =
-    cleanInput === 'reset' ||
-    cleanInput === 'restart' ||
-    cleanInput === 'start' ||
-    cleanInput === 'menu' ||
-    cleanInput === 'services' ||
-    cleanInput === 'hi' ||
-    cleanInput === 'hello' ||
-    cleanInput === 'hey' ||
-    cleanInput === 'hola' ||
-    cleanInput === 'help' ||
-    cleanInput === 'good morning' ||
-    cleanInput === 'good evening';
+  const customTriggers = (config.botFlow?.triggerKeywords || '')
+    .split(',')
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+  const defaultTriggers = ['reset', 'restart', 'start', 'menu', 'services', 'hi', 'hello', 'hey', 'hola', 'help', 'good morning', 'good evening'];
+  const isGreetingOrReset = defaultTriggers.includes(cleanInput) || customTriggers.includes(cleanInput);
 
   if (isGreetingOrReset) {
     await supabase
@@ -504,7 +501,7 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
         updated_at: new Date().toISOString(),
       });
 
-    const welcomeMsg = WELCOME_MESSAGE;
+    const welcomeMsg = getWelcomeMessage();
     await logWhatsAppMessage(cleanPhone, profileName || session?.customer_name || 'WhatsApp Customer', 'outbound', 'bot', welcomeMsg);
 
     if (isMeta) {
@@ -774,7 +771,8 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
         })
         .eq('phone', cleanPhone);
 
-      const updateReply = `Updated! You selected: ${matchedService} ✨\n\nMay I know your full name so our team can address you properly?`;
+      const namePromptText = config.botFlow?.namePrompt || 'May I know your full name so our team can address you properly?';
+      const updateReply = `Updated! You selected: ${matchedService} ✨\n\n${namePromptText}`;
       await logWhatsAppMessage(cleanPhone, profileName || 'WhatsApp Customer', 'outbound', 'bot', updateReply);
 
       if (isMeta) {
@@ -799,7 +797,8 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
         updated_at: new Date().toISOString(),
       });
 
-    const reply = `Great choice! ${matchedService} is one of our specialty services. ✨\n\nMay I know your full name so our team can address you properly?`;
+    const namePromptText = config.botFlow?.namePrompt || 'May I know your full name so our team can address you properly?';
+    const reply = `Great choice! ${matchedService} is one of our specialty services. ✨\n\n${namePromptText}`;
     await logWhatsAppMessage(cleanPhone, profileName || 'WhatsApp Customer', 'outbound', 'bot', reply);
 
     if (isMeta) {
@@ -1058,11 +1057,16 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
         updated_at: new Date().toISOString(),
       });
 
-    const confirmMsg =
-      `Thank you, ${customerName}! 🎉\n\n` +
-      `We have received your request for *${chosenService}*. Our detailing specialist will reach out to you shortly on this number.\n\n` +
+    const rawConfirm = config.botFlow?.confirmMessage ||
+      `Thank you, {name}! 🎉\n\n` +
+      `We have received your request for *{service}*. Our detailing specialist will reach out to you shortly on this number.\n\n` +
       `Explore our studio transformations & website:\n` +
-      `🌐 ${WEBSITE_URL}`;
+      `🌐 {website}`;
+
+    const confirmMsg = rawConfirm
+      .replace(/\{name\}/g, customerName)
+      .replace(/\{service\}/g, chosenService)
+      .replace(/\{website\}/g, config.business?.websiteUrl || WEBSITE_URL);
 
     const confirmButtons = [
       { id: 'MORE_WEBSITE', title: '🌐 Visit Website' },
@@ -1093,7 +1097,7 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
       updated_at: new Date().toISOString(),
     });
 
-  const welcomeMsg = WELCOME_MESSAGE;
+  const welcomeMsg = getWelcomeMessage();
   await logWhatsAppMessage(cleanPhone, profileName || 'WhatsApp Customer', 'outbound', 'bot', welcomeMsg);
 
   if (isMeta) {
