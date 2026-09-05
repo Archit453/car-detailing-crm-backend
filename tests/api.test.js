@@ -1472,7 +1472,43 @@ async function runTests() {
     await supabase.from('whatsapp_sessions').delete().in('phone', ['919999900001', '919999900002']);
     await supabase.from('leads').delete().in('phone', ['9999900001', '+919999900001', '919999900001']);
 
-    // Test 47: POST /api/auth/logout clears session
+    // Test: GET /adminedit serves adminedit HTML (authenticated)
+    const adminEditRes = await fetch(`${baseUrl}/adminedit`, { headers: { Cookie: sessionCookie } });
+    assert(adminEditRes.status === 200, 'GET /adminedit returns 200 OK for authenticated user');
+    const adminEditHtml = await adminEditRes.text();
+    assert(adminEditHtml.includes('Admin Settings & Workflow Control'), 'GET /adminedit serves Settings HTML page');
+
+    // Test: GET /adminedit redirects unauthenticated user
+    const unauthAdminEditRes = await fetch(`${baseUrl}/adminedit`, { redirect: 'manual' });
+    assert(unauthAdminEditRes.status === 302, 'Unauthenticated GET /adminedit redirects (302)');
+
+    // Test: GET /api/settings returns settings (authenticated)
+    const settingsGetRes = await fetch(`${baseUrl}/api/settings`, { headers: { Cookie: sessionCookie } });
+    const settingsGetJson = await settingsGetRes.json();
+    assert(settingsGetRes.status === 200, 'GET /api/settings returns 200 OK');
+    assert(Boolean(settingsGetJson.data?.webhooks?.whatsappUrl), 'GET /api/settings includes whatsappUrl webhook');
+
+    // Test: POST /api/settings updates settings
+    const settingsPostRes = await fetch(`${baseUrl}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({ websiteUrl: 'https://weekly-steps-579379.framer.app/' }),
+    });
+    const settingsPostJson = await settingsPostRes.json();
+    assert(settingsPostRes.status === 200, 'POST /api/settings returns 200 OK');
+    assert(settingsPostJson.data?.updated === true, 'POST /api/settings confirms updated: true');
+
+    // Test: POST /api/settings/test-webhook-ping
+    const pingTestRes = await fetch(`${baseUrl}/api/settings/test-webhook-ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: sessionCookie },
+      body: JSON.stringify({ message: 'hi' }),
+    });
+    const pingTestJson = await pingTestRes.json();
+    assert(pingTestRes.status === 200, 'POST /api/settings/test-webhook-ping returns 200 OK');
+    assert(pingTestJson.data?.status === 'WEBHOOK_WORKFLOW_VERIFIED', 'Diagnostic test ping verifies webhook workflow');
+
+    // Test: POST /api/auth/logout clears session
     const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
       method: 'POST',
       headers: { Cookie: sessionCookie },

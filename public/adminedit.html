@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Detailing | Settings & Workflow Manager</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22 100%22><text y=%22.9em%22 font-size=%2290%22>⚙️</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#0284c7', 600: '#0369a1', accent: '#38bdf8' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen antialiased flex flex-col font-sans">
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">Admin Settings & Workflow Control</h1>
+          <p class="text-xs text-zinc-400">Manage Meta API Tokens, Webhooks, Branding & Workflow Setup</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="/dashboard" class="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-xs font-semibold transition active:scale-95">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-sky-400"></i>
+          <span>Back to CRM Dashboard</span>
+        </a>
+        <button id="btn-logout" class="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition active:scale-95">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Notification Banner -->
+    <div id="toast-banner" class="hidden p-4 rounded-xl border text-sm font-medium transition-all duration-300 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i id="toast-icon" data-lucide="check-circle-2" class="w-5 h-5"></i>
+        <span id="toast-message">Settings updated cleanly</span>
+      </div>
+      <button onclick="document.getElementById('toast-banner').classList.add('hidden')" class="text-zinc-400 hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- 1. Interactive Workflow Diagram & Architecture Card -->
+    <section class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+      <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <i data-lucide="git-fork" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">System Architecture & Lead Flow Diagram</h2>
+            <p class="text-xs text-zinc-400">Understand how website inquiries, WhatsApp DMs, and Instagram leads are processed</p>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">Automated Pipeline Active</span>
+      </div>
+
+      <!-- Flowchart Diagram -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Channel 1: Framer Website -->
+        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
+          <div class="flex items-center space-x-2 text-sky-400 font-semibold text-xs">
+            <i data-lucide="globe" class="w-4 h-4"></i>
+            <span>1. Framer Website Form</span>
+          </div>
+          <p class="text-xs text-zinc-400">Customer fills quote form on website &rarr; POST request sent to backend API.</p>
+          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
+            <span class="truncate">POST /api/leads</span>
+            <button onclick="copyToClipboard('/api/leads')" class="text-sky-400 hover:text-sky-300 text-xs font-sans">Copy</button>
+          </div>
+        </div>
+
+        <!-- Channel 2: WhatsApp Cloud API -->
+        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
+          <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span>2. Meta WhatsApp Cloud API</span>
+          </div>
+          <p class="text-xs text-zinc-400">Customer sends WA message &rarr; Interactive list menu replies &rarr; Lead created in CRM.</p>
+          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
+            <span class="truncate">POST /api/webhook/whatsapp</span>
+            <button onclick="copyToClipboard('/api/webhook/whatsapp')" class="text-emerald-400 hover:text-emerald-300 text-xs font-sans">Copy</button>
+          </div>
+        </div>
+
+        <!-- Channel 3: Instagram Graph API -->
+        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
+          <div class="flex items-center space-x-2 text-pink-400 font-semibold text-xs">
+            <i data-lucide="instagram" class="w-4 h-4"></i>
+            <span>3. Meta Instagram DM Bot</span>
+          </div>
+          <p class="text-xs text-zinc-400">Customer sends IG DM or comments on Reel &rarr; Carousel buttons reply &rarr; Lead stored.</p>
+          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
+            <span class="truncate">POST /api/webhook/instagram</span>
+            <button onclick="copyToClipboard('/api/webhook/instagram')" class="text-pink-400 hover:text-pink-300 text-xs font-sans">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Integration Credentials & Configuration Panel -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Configuration Inputs Form -->
+      <section class="lg:col-span-2 bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <div class="flex items-center space-x-3">
+            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <i data-lucide="sliders" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white">Integration Credentials & Tokens</h2>
+              <p class="text-xs text-zinc-400">Update Meta tokens, Webhook secrets, and Studio details</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="form-settings" class="space-y-6">
+          
+          <!-- Meta WhatsApp Section -->
+          <div class="space-y-4 pt-2">
+            <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs uppercase tracking-wider">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+              <span>Meta WhatsApp Cloud API Connection</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">WhatsApp Permanent Access Token</label>
+                <input type="password" id="input-wa-token" placeholder="EAAPcKFD..." class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Phone Number ID</label>
+                <input type="text" id="input-wa-phone-id" placeholder="1344182455438369" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-zinc-300 mb-1.5">Webhook Handshake Verify Token</label>
+              <input type="text" id="input-wa-verify" placeholder="signature_crm_verify_token" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+            </div>
+          </div>
+
+          <hr class="border-zinc-800/80">
+
+          <!-- Meta Instagram Section -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 text-pink-400 font-semibold text-xs uppercase tracking-wider">
+              <i data-lucide="instagram" class="w-4 h-4"></i>
+              <span>Meta Instagram Graph API Connection</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Instagram Page Access Token</label>
+                <input type="password" id="input-ig-token" placeholder="IGAAO2AZ..." class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Instagram Verify Token</label>
+                <input type="text" id="input-ig-verify" placeholder="signature_crm_verify_token" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-zinc-800/80">
+
+          <!-- Business Branding Section -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2 text-sky-400 font-semibold text-xs uppercase tracking-wider">
+              <i data-lucide="building" class="w-4 h-4"></i>
+              <span>Studio Branding & Landing Page Website</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Official Website URL (Framer Landing Page)</label>
+                <input type="url" id="input-website-url" placeholder="https://weekly-steps-579379.framer.app/" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Business Name</label>
+                <input type="text" id="input-biz-name" placeholder="Signature Detailing" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Studio Phone Number</label>
+                <input type="text" id="input-biz-phone" placeholder="+91 98765 43210" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Studio Address</label>
+                <input type="text" id="input-biz-address" placeholder="Studio 4, Detailing Bay Road, Automobile Hub, India" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition">
+              </div>
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <div class="pt-4 flex justify-end">
+            <button type="submit" id="btn-save-settings" class="flex items-center space-x-2 px-6 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-lg shadow-sky-600/20 transition active:scale-95">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>Save System Settings</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 3. Diagnostics & Live Integration Testing Panel -->
+      <section class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6 flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="flex items-center space-x-3 border-b border-zinc-800 pb-4">
+            <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white">Live Integration Testers</h2>
+              <p class="text-xs text-zinc-400">Verify Meta Cloud API & Webhook execution</p>
+            </div>
+          </div>
+
+          <!-- Diagnostic Button 1: Test WhatsApp Meta API -->
+          <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-zinc-200">1. Test WhatsApp Cloud API</span>
+              <button id="btn-test-wa" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition active:scale-95">
+                Run Test
+              </button>
+            </div>
+            <p class="text-[11px] text-zinc-400">Verifies your Permanent Token & Phone ID with Meta Graph API.</p>
+            <div id="res-test-wa" class="hidden p-3 rounded-lg bg-zinc-900 text-[11px] font-mono overflow-x-auto text-zinc-300"></div>
+          </div>
+
+          <!-- Diagnostic Button 2: Test Instagram Meta API -->
+          <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-zinc-200">2. Test Instagram Graph API</span>
+              <button id="btn-test-ig" class="px-3 py-1.5 rounded-lg bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold transition active:scale-95">
+                Run Test
+              </button>
+            </div>
+            <p class="text-[11px] text-zinc-400">Verifies Page Access Token & Connected IG account (@creationindia_).</p>
+            <div id="res-test-ig" class="hidden p-3 rounded-lg bg-zinc-900 text-[11px] font-mono overflow-x-auto text-zinc-300"></div>
+          </div>
+
+          <!-- Diagnostic Button 3: Webhook Simulation Ping -->
+          <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-zinc-200">3. Webhook Workflow Ping</span>
+              <button id="btn-test-ping" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition active:scale-95">
+                Ping Webhook
+              </button>
+            </div>
+            <p class="text-[11px] text-zinc-400">Simulates an incoming WhatsApp message and displays auto-reply response.</p>
+            <div id="res-test-ping" class="hidden p-3 rounded-lg bg-zinc-900 text-[11px] font-mono overflow-x-auto text-zinc-300"></div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-zinc-800 text-[11px] text-zinc-400 flex items-center justify-between">
+          <span>System Version: 1.0.0</span>
+          <span class="text-emerald-400 font-medium">&bull; Server Operational</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // Copy helper
+    function copyToClipboard(path) {
+      const fullUrl = window.location.origin + path;
+      navigator.clipboard.writeText(fullUrl);
+      showToast('Copied endpoint URL to clipboard: ' + fullUrl, 'success');
+    }
+
+    // Show toast banner
+    function showToast(msg, type = 'success') {
+      const banner = document.getElementById('toast-banner');
+      const text = document.getElementById('toast-message');
+      text.innerText = msg;
+
+      banner.className = `p-4 rounded-xl border text-sm font-medium transition-all duration-300 flex items-center justify-between ${
+        type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border-red-500/20 text-red-300'
+      }`;
+      banner.classList.remove('hidden');
+      setTimeout(() => banner.classList.add('hidden'), 5000);
+    }
+
+    // Load active settings on page load
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const json = await res.json();
+        if (json.success && json.data) {
+          const d = json.data;
+          document.getElementById('input-wa-token').value = d.whatsappTokenMasked || '';
+          document.getElementById('input-wa-phone-id').value = d.whatsappPhoneNumberId || '';
+          document.getElementById('input-wa-verify').value = d.whatsappVerifyToken || '';
+          document.getElementById('input-ig-token').value = d.instagramPageAccessTokenMasked || '';
+          document.getElementById('input-ig-verify').value = d.instagramVerifyToken || '';
+          document.getElementById('input-website-url').value = d.websiteUrl || '';
+          document.getElementById('input-biz-name').value = d.businessName || '';
+          document.getElementById('input-biz-phone').value = d.businessPhone || '';
+          document.getElementById('input-biz-address').value = d.businessAddress || '';
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    // Form submission handler
+    document.getElementById('form-settings').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        whatsappToken: document.getElementById('input-wa-token').value,
+        whatsappPhoneNumberId: document.getElementById('input-wa-phone-id').value,
+        whatsappVerifyToken: document.getElementById('input-wa-verify').value,
+        instagramPageAccessToken: document.getElementById('input-ig-token').value,
+        instagramVerifyToken: document.getElementById('input-ig-verify').value,
+        websiteUrl: document.getElementById('input-website-url').value,
+        businessName: document.getElementById('input-biz-name').value,
+        businessPhone: document.getElementById('input-biz-phone').value,
+        businessAddress: document.getElementById('input-biz-address').value,
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('System settings saved and applied successfully!', 'success');
+          loadSettings();
+        } else {
+          showToast(json.error?.message || 'Failed to save settings', 'error');
+        }
+      } catch (err) {
+        showToast('Network error saving settings', 'error');
+      }
+    });
+
+    // Test WhatsApp Connection
+    document.getElementById('btn-test-wa').addEventListener('click', async () => {
+      const box = document.getElementById('res-test-wa');
+      box.classList.remove('hidden');
+      box.innerText = 'Testing Meta WhatsApp API connection...';
+
+      try {
+        const res = await fetch('/api/settings/test-whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        box.innerText = JSON.stringify(json, null, 2);
+      } catch (err) {
+        box.innerText = 'Error: ' + err.message;
+      }
+    });
+
+    // Test Instagram Connection
+    document.getElementById('btn-test-ig').addEventListener('click', async () => {
+      const box = document.getElementById('res-test-ig');
+      box.classList.remove('hidden');
+      box.innerText = 'Testing Meta Instagram API connection...';
+
+      try {
+        const res = await fetch('/api/settings/test-instagram', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        box.innerText = JSON.stringify(json, null, 2);
+      } catch (err) {
+        box.innerText = 'Error: ' + err.message;
+      }
+    });
+
+    // Test Webhook Ping
+    document.getElementById('btn-test-ping').addEventListener('click', async () => {
+      const box = document.getElementById('res-test-ping');
+      box.classList.remove('hidden');
+      box.innerText = 'Executing Webhook simulation ping...';
+
+      try {
+        const res = await fetch('/api/settings/test-webhook-ping', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        box.innerText = JSON.stringify(json, null, 2);
+      } catch (err) {
+        box.innerText = 'Error: ' + err.message;
+      }
+    });
+
+    // Logout
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    });
+
+    // Initialize lucide icons & settings
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      loadSettings();
+    });
+  </script>
+</body>
+</html>

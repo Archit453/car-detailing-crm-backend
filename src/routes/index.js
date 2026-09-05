@@ -5,12 +5,16 @@ import instagramRoutes from './instagram.routes.js';
 import authRoutes from './auth.routes.js';
 import keepaliveRoutes from './keepalive.routes.js';
 import inboxRoutes from './inbox.routes.js';
+import settingsRoutes from './settings.routes.js';
 import { successResponse } from '../utils/apiResponse.js';
 
 const apiRouter = Router();
 
 // Authentication sub-router
 apiRouter.use('/auth', authRoutes);
+
+// System Settings & Integration Management sub-router (Protected)
+apiRouter.use('/settings', settingsRoutes);
 
 // Database keepalive sub-router (Vercel Cron & Health monitoring)
 apiRouter.use('/keepalive', keepaliveRoutes);
@@ -38,15 +42,10 @@ apiRouter.get('/', (req, res) => {
         health: 'GET /health',
         keepalive: 'GET /api/keepalive',
         login: 'POST /api/auth/login',
-        logout: 'POST /api/auth/logout',
+        settings: 'GET /api/settings (Protected)',
         inboxConversations: 'GET /api/inbox/whatsapp/conversations (Protected)',
-        inboxMessages: 'GET /api/inbox/whatsapp/messages/:phone (Protected)',
-        inboxSend: 'POST /api/inbox/whatsapp/send (Protected)',
         createLead: 'POST /api/leads (Public)',
         listLeads: 'GET /api/leads (Protected)',
-        getLeadById: 'GET /api/leads/:id (Protected)',
-        updateLeadStatus: 'PATCH /api/leads/:id/status (Protected)',
-        deleteLead: 'DELETE /api/leads/:id (Protected)',
         whatsappWebhook: 'POST /api/webhook/whatsapp',
         instagramWebhook: 'POST /api/webhook/instagram',
       },

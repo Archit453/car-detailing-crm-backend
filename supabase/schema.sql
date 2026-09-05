@@ -116,9 +116,27 @@ CREATE POLICY "Allow public full access to whatsapp_messages"
     USING (true)
     WITH CHECK (true);
 
--- 8. Sample Seed Data (Optional for testing)
+-- 8. System Settings Table (Dynamic Tokens & Configuration Overrides)
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'global_config',
+    settings JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE public.system_settings IS 'Stores dynamic Meta API tokens, branding info, and system settings';
+
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public full access to system_settings"
+    ON public.system_settings
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+-- 9. Sample Seed Data (Optional for testing)
 -- INSERT INTO public.leads (name, phone, service, source, status) VALUES
 -- ('John Smith', '+1-555-0199', 'Full Detail', 'website', 'new'),
 -- ('Sarah Connor', '+1-555-0144', 'Ceramic Coating', 'instagram', 'contacted'),
 -- ('Michael Scott', '+1-555-0182', 'Paint Correction', 'referral', 'scheduled');
+
 

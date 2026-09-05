@@ -69,6 +69,11 @@ app.get('/dashboard', requireAuth, (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+// Admin Settings & Workflow Control Panel UI (Protected)
+app.get(['/adminedit', '/settings'], requireAuth, (req, res) => {
+  res.sendFile(path.join(publicPath, 'adminedit.html'));
+});
+
 // WhatsApp Coexistence Setup Page (Step 3)
 app.get('/coexistence', (req, res) => {
   res.sendFile(path.join(publicPath, 'coexistence.html'));
