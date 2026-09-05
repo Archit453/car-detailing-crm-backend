@@ -63,62 +63,244 @@
       </button>
     </div>
 
-    <!-- 1. Interactive Workflow Diagram & Architecture Card -->
-    <section class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
-      <div class="flex items-center justify-between mb-4 border-b border-zinc-800 pb-4">
+    <!-- 1. Interactive Bot Conversation Workflow Setup -->
+    <section class="bg-zinc-900/70 border border-zinc-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
         <div class="flex items-center space-x-3">
-          <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <i data-lucide="git-fork" class="w-5 h-5"></i>
+          <div class="p-2.5 rounded-xl bg-gradient-to-tr from-sky-500 to-emerald-500 text-white shadow-lg shadow-sky-500/20">
+            <i data-lucide="git-merge" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-base font-bold text-white">System Architecture & Lead Flow Diagram</h2>
-            <p class="text-xs text-zinc-400">Understand how website inquiries, WhatsApp DMs, and Instagram leads are processed</p>
+            <h2 class="text-base font-bold text-white tracking-tight">Lead Generation & Bot Conversation Workflow Setup</h2>
+            <p class="text-xs text-zinc-400">Interactive visual flow of incoming customer messages, bot auto-replies, button options, and CRM lead capture</p>
           </div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">Automated Pipeline Active</span>
-      </div>
-
-      <!-- Flowchart Diagram -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <!-- Channel 1: Framer Website -->
-        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
-          <div class="flex items-center space-x-2 text-sky-400 font-semibold text-xs">
-            <i data-lucide="globe" class="w-4 h-4"></i>
-            <span>1. Framer Website Form</span>
-          </div>
-          <p class="text-xs text-zinc-400">Customer fills quote form on website &rarr; POST request sent to backend API.</p>
-          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
-            <span class="truncate">POST /api/leads</span>
-            <button onclick="copyToClipboard('/api/leads')" class="text-sky-400 hover:text-sky-300 text-xs font-sans">Copy</button>
-          </div>
-        </div>
-
-        <!-- Channel 2: WhatsApp Cloud API -->
-        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
-          <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs">
-            <i data-lucide="message-circle" class="w-4 h-4"></i>
-            <span>2. Meta WhatsApp Cloud API</span>
-          </div>
-          <p class="text-xs text-zinc-400">Customer sends WA message &rarr; Interactive list menu replies &rarr; Lead created in CRM.</p>
-          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
-            <span class="truncate">POST /api/webhook/whatsapp</span>
-            <button onclick="copyToClipboard('/api/webhook/whatsapp')" class="text-emerald-400 hover:text-emerald-300 text-xs font-sans">Copy</button>
-          </div>
-        </div>
-
-        <!-- Channel 3: Instagram Graph API -->
-        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 flex flex-col justify-between space-y-3">
-          <div class="flex items-center space-x-2 text-pink-400 font-semibold text-xs">
-            <i data-lucide="instagram" class="w-4 h-4"></i>
-            <span>3. Meta Instagram DM Bot</span>
-          </div>
-          <p class="text-xs text-zinc-400">Customer sends IG DM or comments on Reel &rarr; Carousel buttons reply &rarr; Lead stored.</p>
-          <div class="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono flex items-center justify-between">
-            <span class="truncate">POST /api/webhook/instagram</span>
-            <button onclick="copyToClipboard('/api/webhook/instagram')" class="text-pink-400 hover:text-pink-300 text-xs font-sans">Copy</button>
-          </div>
+        <div class="flex items-center space-x-2">
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20 flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Workflow Engine Active</span>
+          </span>
         </div>
       </div>
+
+      <!-- Quick Webhook Endpoints Toolbar -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2 truncate">
+            <i data-lucide="message-square" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+            <span class="text-xs text-zinc-300 font-mono truncate">POST /api/webhook/whatsapp</span>
+          </div>
+          <button onclick="copyToClipboard('/api/webhook/whatsapp')" class="px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+        </div>
+        <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2 truncate">
+            <i data-lucide="instagram" class="w-4 h-4 text-pink-400 shrink-0"></i>
+            <span class="text-xs text-zinc-300 font-mono truncate">POST /api/webhook/instagram</span>
+          </div>
+          <button onclick="copyToClipboard('/api/webhook/instagram')" class="px-2.5 py-1 rounded-md bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+        </div>
+        <div class="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2 truncate">
+            <i data-lucide="globe" class="w-4 h-4 text-sky-400 shrink-0"></i>
+            <span class="text-xs text-zinc-300 font-mono truncate">POST /api/leads</span>
+          </div>
+          <button onclick="copyToClipboard('/api/leads')" class="px-2.5 py-1 rounded-md bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 text-[11px] font-semibold transition shrink-0">Copy</button>
+        </div>
+      </div>
+
+      <!-- Channel Tabs Switcher -->
+      <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2">
+        <button id="tab-btn-wa" onclick="switchWorkflowTab('wa')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>WhatsApp Cloud Bot Workflow</span>
+        </button>
+        <button id="tab-btn-ig" onclick="switchWorkflowTab('ig')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800">
+          <i data-lucide="instagram" class="w-4 h-4"></i>
+          <span>Instagram DM Bot Workflow</span>
+        </button>
+      </div>
+
+      <!-- Workflow Tree: WhatsApp Cloud API -->
+      <div id="workflow-wa" class="space-y-6">
+        
+        <!-- Step 1 & Step 2 Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          
+          <!-- Step 1: Customer Trigger -->
+          <div class="lg:col-span-4 p-5 rounded-2xl bg-zinc-950 border border-zinc-800 space-y-3 relative">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[10px] font-bold uppercase tracking-wider border border-sky-500/20">Step 1 &bull; Trigger</span>
+              <i data-lucide="user-check" class="w-4 h-4 text-sky-400"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Customer Message Received</h3>
+            <p class="text-xs text-zinc-400">Customer sends initial greeting or taps "Inquire" button on WhatsApp.</p>
+            
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 text-xs space-y-1.5">
+              <div class="text-[11px] font-semibold text-zinc-400">Accepted Trigger Keywords:</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-sky-300 font-mono text-[11px]">"Hi"</span>
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-sky-300 font-mono text-[11px]">"Hello"</span>
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-sky-300 font-mono text-[11px]">"Menu"</span>
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-sky-300 font-mono text-[11px]">"Services"</span>
+                <span class="px-2 py-0.5 rounded bg-zinc-800 text-sky-300 font-mono text-[11px]">"Reset"</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connector Arrow -->
+          <div class="hidden lg:flex lg:col-span-1 items-center justify-center">
+            <div class="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400">
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+          <!-- Step 2: Interactive Menu Response -->
+          <div class="lg:col-span-7 p-5 rounded-2xl bg-zinc-950 border border-emerald-500/30 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">Step 2 &bull; Interactive Auto-Reply</span>
+              <span class="text-[11px] text-emerald-400 font-medium">Meta List Template</span>
+            </div>
+            
+            <!-- WhatsApp Chat Preview Mockup -->
+            <div class="p-4 rounded-2xl bg-[#0b141a] border border-emerald-900/40 space-y-3 font-sans shadow-lg">
+              <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2 text-[11px] text-zinc-400">
+                <span class="font-semibold text-emerald-400">Signature Detailing Official</span>
+                <span class="text-[10px] text-zinc-500">11:44 AM</span>
+              </div>
+              <div class="text-xs text-zinc-200 leading-relaxed whitespace-pre-line font-normal">
+Welcome to <span class="font-bold text-white">Signature Detailing</span> 🏎️✨
+
+Which service are you interested in?
+
+1. 🛡️ <span class="font-semibold text-white">PPF (Paint Protection Film)</span>
+2. ✨ <span class="font-semibold text-white">Ceramic Coating</span>
+3. 🚘 <span class="font-semibold text-white">Paint Correction</span>
+4. 🧼 <span class="font-semibold text-white">Interior Detailing</span>
+5. 🏎️ <span class="font-semibold text-white">Full Detail Package</span>
+
+Tap 'View Packages' below or reply with 1, 2, 3, 4, or 5.
+              </div>
+
+              <!-- Interactive List Button Preview -->
+              <div class="pt-2 border-t border-zinc-800/60">
+                <div class="w-full py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-emerald-400 text-xs font-semibold text-center border border-emerald-500/30 cursor-default flex items-center justify-center space-x-2 shadow-sm">
+                  <i data-lucide="list" class="w-4 h-4"></i>
+                  <span>View Packages 🏎️</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Connector Down Arrow -->
+        <div class="flex justify-center my-2">
+          <div class="px-4 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 flex items-center space-x-2">
+            <span>Customer Selects Package or Replies</span>
+            <i data-lucide="arrow-down" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+        </div>
+
+        <!-- Step 3: Branching Outcomes -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <!-- Branch A: New Lead Creation -->
+          <div class="p-5 rounded-2xl bg-zinc-950 border border-sky-500/30 space-y-3 relative flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 text-[10px] font-bold uppercase tracking-wider border border-sky-500/20">Branch A &bull; New Lead</span>
+                <i data-lucide="user-plus" class="w-4 h-4 text-sky-400"></i>
+              </div>
+              <h4 class="text-xs font-bold text-white">1. Name & Phone Capture</h4>
+              <p class="text-xs text-zinc-400">Bot asks customer for their full name, pairs it with their WhatsApp phone number, and records the lead.</p>
+              
+              <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 text-[11px] text-sky-300 space-y-1">
+                <div class="font-semibold text-zinc-300">Database Action:</div>
+                <div class="font-mono text-[10px] text-zinc-400">UPSERT public.leads (status: 'new', source: 'whatsapp')</div>
+              </div>
+            </div>
+            <div class="p-2 rounded-lg bg-sky-500/10 text-sky-300 text-[11px] font-medium text-center border border-sky-500/20">
+              ✅ Appears instantly on CRM Kanban
+            </div>
+          </div>
+
+          <!-- Branch B: Returning Customer Re-engagement -->
+          <div class="p-5 rounded-2xl bg-zinc-950 border border-indigo-500/30 space-y-3 relative flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/20">Branch B &bull; Re-engagement</span>
+                <i data-lucide="repeat" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              <h4 class="text-xs font-bold text-white">2. Existing Customer Flow</h4>
+              <p class="text-xs text-zinc-400">If number exists in database, bot presents re-engagement interactive buttons.</p>
+              
+              <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 text-[11px] space-y-1.5">
+                <div class="font-semibold text-zinc-300">Interactive Buttons:</div>
+                <div class="flex gap-2">
+                  <span class="px-2 py-1 rounded bg-zinc-800 text-emerald-300 text-[10px] border border-emerald-500/30">[ YES - Book Service ]</span>
+                  <span class="px-2 py-1 rounded bg-zinc-800 text-red-300 text-[10px] border border-red-500/30">[ NO - Talk to Agent ]</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-300 text-[11px] font-medium text-center border border-indigo-500/20">
+              🔄 Updates Lead Service Preference
+            </div>
+          </div>
+
+          <!-- Branch C: Human Agent Takeover -->
+          <div class="p-5 rounded-2xl bg-zinc-950 border border-amber-500/30 space-y-3 relative flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider border border-amber-500/20">Branch C &bull; Live Support</span>
+                <i data-lucide="headset" class="w-4 h-4 text-amber-400"></i>
+              </div>
+              <h4 class="text-xs font-bold text-white">3. Human Agent Takeover</h4>
+              <p class="text-xs text-zinc-400">If customer selects "Talk to Agent" or types custom queries, bot auto-reply pauses.</p>
+              
+              <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 text-[11px] text-amber-300 space-y-1">
+                <div class="font-semibold text-zinc-300">Coexistence Mode:</div>
+                <div class="text-[10px] text-zinc-400">Messages sync cleanly to CRM Live Inbox & WhatsApp Phone App.</div>
+              </div>
+            </div>
+            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-300 text-[11px] font-medium text-center border border-amber-500/20">
+              ⏸️ Bot Paused &bull; Live Agent Controls
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Workflow Tree: Instagram DM Bot -->
+      <div id="workflow-ig" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="p-5 rounded-2xl bg-zinc-950 border border-pink-500/30 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 text-[10px] font-bold uppercase tracking-wider border border-pink-500/20">Instagram DM Trigger</span>
+              <i data-lucide="instagram" class="w-4 h-4 text-pink-400"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Direct Message or Reel Comment</h3>
+            <p class="text-xs text-zinc-400">Customer sends a Direct Message or leaves a comment on a detailing Reel.</p>
+            <div class="p-3 rounded-xl bg-zinc-900 text-xs text-pink-300 font-mono">
+              Event: messaging_postbacks / instagram_messages
+            </div>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-zinc-950 border border-pink-500/30 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 text-[10px] font-bold uppercase tracking-wider border border-pink-500/20">IG Carousel & IGSID Delivery</span>
+              <i data-lucide="check-check" class="w-4 h-4 text-pink-400"></i>
+            </div>
+            <h3 class="text-sm font-bold text-white">Numeric IGSID Direct Message Reply</h3>
+            <p class="text-xs text-zinc-400">Meta requires numeric Instagram-Scoped User IDs (IGSID) for DM delivery. Lead is stored with <span class="text-pink-300 font-semibold">source: 'instagram'</span>.</p>
+            <div class="p-3 rounded-xl bg-zinc-900 text-xs text-pink-300 font-mono">
+              UPSERT public.leads (status: 'new', source: 'instagram')
+            </div>
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- 2. Integration Credentials & Configuration Panel -->
@@ -150,7 +332,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">WhatsApp Permanent Access Token</label>
-                <input type="password" id="input-wa-token" placeholder="EAAPcKFD..." class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+                <div class="relative">
+                  <input type="password" id="input-wa-token" placeholder="EAAPcKFD..." class="w-full pl-3.5 pr-10 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+                  <button type="button" onclick="toggleTokenVisibility('input-wa-token', 'eye-wa-token')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition">
+                    <i id="eye-wa-token" data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
               </div>
               <div>
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">Phone Number ID</label>
@@ -160,7 +347,12 @@
 
             <div>
               <label class="block text-xs font-medium text-zinc-300 mb-1.5">Webhook Handshake Verify Token</label>
-              <input type="text" id="input-wa-verify" placeholder="signature_crm_verify_token" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+              <div class="relative">
+                <input type="password" id="input-wa-verify" placeholder="signature_crm_verify_token" class="w-full pl-3.5 pr-10 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-sky-500 transition font-mono">
+                <button type="button" onclick="toggleTokenVisibility('input-wa-verify', 'eye-wa-verify')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition">
+                  <i id="eye-wa-verify" data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -176,11 +368,21 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">Instagram Page Access Token</label>
-                <input type="password" id="input-ig-token" placeholder="IGAAO2AZ..." class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+                <div class="relative">
+                  <input type="password" id="input-ig-token" placeholder="IGAAO2AZ..." class="w-full pl-3.5 pr-10 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+                  <button type="button" onclick="toggleTokenVisibility('input-ig-token', 'eye-ig-token')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition">
+                    <i id="eye-ig-token" data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
               </div>
               <div>
                 <label class="block text-xs font-medium text-zinc-300 mb-1.5">Instagram Verify Token</label>
-                <input type="text" id="input-ig-verify" placeholder="signature_crm_verify_token" class="w-full px-3.5 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+                <div class="relative">
+                  <input type="password" id="input-ig-verify" placeholder="signature_crm_verify_token" class="w-full pl-3.5 pr-10 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-pink-500 transition font-mono">
+                  <button type="button" onclick="toggleTokenVisibility('input-ig-verify', 'eye-ig-verify')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition">
+                    <i id="eye-ig-verify" data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -287,6 +489,39 @@
   </main>
 
   <script>
+    // Eye button token visibility toggle
+    function toggleTokenVisibility(inputId, eyeId) {
+      const input = document.getElementById(inputId);
+      const eyeIcon = document.getElementById(eyeId);
+      if (!input || !eyeIcon) return;
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    }
+
+    // Switch between WhatsApp & Instagram Bot Workflow tabs
+    function switchWorkflowTab(tab) {
+      const waTree = document.getElementById('workflow-wa');
+      const igTree = document.getElementById('workflow-ig');
+      const btnWa = document.getElementById('tab-btn-wa');
+      const btnIg = document.getElementById('tab-btn-ig');
+
+      if (tab === 'wa') {
+        waTree.classList.remove('hidden');
+        igTree.classList.add('hidden');
+        btnWa.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        btnIg.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800';
+      } else {
+        waTree.classList.add('hidden');
+        igTree.classList.remove('hidden');
+        btnWa.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800';
+        btnIg.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-pink-500/20 text-pink-300 border border-pink-500/40';
+      }
+      lucide.createIcons();
+    }
+
     // Copy helper
     function copyToClipboard(path) {
       const fullUrl = window.location.origin + path;
