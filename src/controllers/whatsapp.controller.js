@@ -35,7 +35,7 @@ export const SERVICE_MAP = {
   '🏎️ full detailing package': 'Full Detail Package',
 };
 
-export const WEBSITE_URL = 'https://weekly-steps-579379.framer.app/';
+export const WEBSITE_URL = config.business?.websiteUrl || 'https://weekly-steps-579379.framer.app/';
 
 export function parseCustomerName(input, fallbackName = 'Customer') {
   if (!input || typeof input !== 'string') return fallbackName;
@@ -334,6 +334,7 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     profileName = value.contacts?.[0]?.profile?.name || '';
 
     // Parse Interactive Button / List replies or text
+    // Parse Interactive Button / List replies, Media, or Text
     if (message.interactive?.type === 'button_reply') {
       incomingText = message.interactive.button_reply.id || '';
       buttonTitle = message.interactive.button_reply.title || '';
@@ -343,6 +344,20 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     } else if (message.button?.payload) {
       incomingText = message.button.payload;
       buttonTitle = message.button.text || '';
+    } else if (message.image) {
+      incomingText = message.image.caption?.trim() || '[Photo]';
+    } else if (message.video) {
+      incomingText = message.video.caption?.trim() || '[Video]';
+    } else if (message.audio || message.voice) {
+      incomingText = '[Voice Note]';
+    } else if (message.document) {
+      incomingText = message.document.caption?.trim() || '[Document]';
+    } else if (message.location) {
+      incomingText = '[Location]';
+    } else if (message.sticker) {
+      incomingText = '[Sticker]';
+    } else if (message.contacts) {
+      incomingText = '[Contact Card]';
     } else {
       incomingText = message.text?.body?.trim() || '';
     }
@@ -411,6 +426,7 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
   const cleanInput = (incomingText || '').toLowerCase().trim();
 
   // Check 1: Human Takeover Mode - Silences the automated bot completely unless user taps a button or command
+  // Check 1: Human Takeover Mode - Silences the automated bot completely unless user taps a button or command/greeting
   if (session && session.step === 'human_takeover') {
     const isInteractiveButtonOrCommand =
       Boolean(SERVICE_MAP[cleanInput]) ||
@@ -420,9 +436,17 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
       cleanInput === 'menu' ||
       cleanInput === 'start' ||
       cleanInput === 'reset' ||
+      cleanInput === 'restart' ||
       cleanInput === 'services' ||
+      cleanInput === 'hi' ||
+      cleanInput === 'hello' ||
+      cleanInput === 'hey' ||
+      cleanInput === 'hola' ||
       cleanInput === 'website' ||
       cleanInput === 'location';
+      cleanInput === 'location' ||
+      cleanInput === 'pricing' ||
+      cleanInput === 'callback';
 
     if (isInteractiveButtonOrCommand) {
       console.log(`[WhatsApp Bot Resuming] Customer ${cleanPhone} interacted with button/command "${incomingText}" during human takeover. Reactivating bot.`);
@@ -454,8 +478,22 @@ export const handleWhatsAppMessage = asyncHandler(async (req, res) => {
     return res.status(200).json({ status: 'success', reply: handoffText });
   }
 
-  // Reset / Start / Menu command
-  if (cleanInput === 'reset' || cleanInput === 'start' || cleanInput === 'menu' || cleanInput === 'services') {
+  // Reset / Start / Greetings / Menu command
+  const isGreetingOrReset =
+    cleanInput === 'reset' ||
+    cleanInput === 'restart' ||
+    cleanInput === 'start' ||
+    cleanInput === 'menu' ||
+    cleanInput === 'services' ||
+    cleanInput === 'hi' ||
+    cleanInput === 'hello' ||
+    cleanInput === 'hey' ||
+    cleanInput === 'hola' ||
+    cleanInput === 'help' ||
+    cleanInput === 'good morning' ||
+    cleanInput === 'good evening';
+
+  if (isGreetingOrReset) {
     await supabase
       .from('whatsapp_sessions')
       .upsert({

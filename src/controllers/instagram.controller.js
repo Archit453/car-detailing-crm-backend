@@ -34,7 +34,7 @@ const WELCOME_TEXT =
   `Which service are you interested in?\n\n` +
   `Tap a button below or reply with 1, 2, 3, 4, or 5:`;
 
-export const WEBSITE_URL = 'https://weekly-steps-579379.framer.app/';
+export const WEBSITE_URL = config.business?.websiteUrl || 'https://weekly-steps-579379.framer.app/';
 
 // Native In-Bubble Button Templates (Meta limit: 3 buttons per bubble, <= 20 chars per title)
 export const ALL_SERVICES_GENERIC_ELEMENTS = [
